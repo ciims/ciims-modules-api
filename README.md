@@ -1,6 +1,9 @@
 # CiiMS API
 The CiiMS API module provides basic access to common methods and data. The CiiMS API is a JSON REST API which supports GET, POST, and DELETE. POSTS requests should be sent as JSON encoded form fields for simplicity.
 
+## License
+See LICENSE.md
+
 ### API Objectives
 The API has been designed with serveral components in mind:
 
@@ -431,7 +434,7 @@ Creates a new comment for ```comment_id```.
 ##### Example Request
 
     {
-        "comment" : "My new comment"  
+        "comment" : "My new comment"
     }
 
 #### Example Response
@@ -494,7 +497,7 @@ Updates a comment with a given id
 ##### Example Request
 
     {
-        "comment" : "My new comment2"  
+        "comment" : "My new comment2"
     }
 
 ##### Example Response
