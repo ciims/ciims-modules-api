@@ -8,7 +8,7 @@ class ContentController extends ApiController
             array('allow',
                 'actions' => array('index', 'tag')
             ),
-            array('allow', 
+            array('allow',
                 'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete', 'drafts', 'my', 'myDrafts'),
                 'expression' => '$user!=NULL&&'
             ),
@@ -26,7 +26,7 @@ class ContentController extends ApiController
         if($id===NULL)
             return $this->getAllContent();
         else
-            return $this->getContent($id); 
+            return $this->getContent($id);
     }
 
     /**
@@ -100,86 +100,6 @@ class ContentController extends ApiController
     }
 
     /**
-     * [GET] [/content/drafts]
-     * Retrieves All Drafts if an admin
-     */
-    public function actionDrafts()
-    {
-        $model = new Content('Search');
-        $model->unsetAttributes();  // clear any default values
-        unset($_GET['password']);
-        unset($_GET['like_count']);
-        if(!empty($_GET))
-            $model->attributes=$_GET;
-
-        // A list of attributes that we want to hide
-        $attributes = array('password', 'like_count');
-
-        $response = array();
-        foreach ($model->search()->getData() as $content)
-        {
-            if (!$content->isPublished())
-                $response[] = $content->getApiAttributes($attributes);
-        }
-
-        return $response;
-    }
-
-    /**
-     * Returns all articles non drafts for the authenticated user
-     */
-    public function actionMy()
-    {
-        $model = new Content('Search');
-        $model->unsetAttributes();  // clear any default values
-        unset($_GET['password']);
-        unset($_GET['like_count']);
-        if(!empty($_GET))
-            $model->attributes=$_GET;
-
-        // A list of attributes that we want to hide
-         $attributes = array('password', 'like_count');
-
-        $model->author_id = $this->user->id;
-
-        $response = array();
-        foreach ($model->search()->getData() as $content)
-        {
-            if($model->author->id == $this->user->id)
-                $response[] = $content->getApiAttributes($attributes);
-        }
-
-        return $response;
-    }
-
-    /**
-     * Returns all drafts for a particular user
-     */
-    public function actionMyDrafts()
-    {
-        $model = new Content('Search');
-        $model->unsetAttributes();  // clear any default values
-        unset($_GET['password']);
-        unset($_GET['like_count']);
-        if(!empty($_GET))
-            $model->attributes=$_GET;
-
-        // A list of attributes that we want to hide
-        $attributes = array('password', 'like_count');
-
-        $model->author_id = $this->user->id;
-        
-        $response = array();
-        foreach ($model->search()->getData() as $content)
-        {
-            if (!$content->isPublished() && $model->author->id == $this->user->id)
-                $response[] = $content->getApiAttributes($attributes);
-        }
-
-        return $response;
-    }
-
-    /**
      * Creates a new entry
      */
     private function createNewPost()
@@ -197,7 +117,7 @@ class ContentController extends ApiController
 
         return $this->returnError(400, NULL, $model->getErrors());
     }
-    
+
     /**
      * Updates an existing entry
      * @param int $id   The Content id
@@ -218,7 +138,7 @@ class ContentController extends ApiController
 
         if ($model->save())
             return $model->getApiAttributes(array('password', 'like_count'));
-        
+
         return $this->returnError(400, NULL, $model->getErrors());
     }
 
@@ -237,9 +157,21 @@ class ContentController extends ApiController
             if ($this->user === NULL)
                 throw new CHttpException(403, Yii::t('Api.content', 'You must be authenticated to access this action.'));
 
-            if (!($this->user->id == $model->author->id || $this->user->role >= 7))
+            if (!($this->user->id == $model->author->id || $this->user->role->id >= 7))
                 throw new CHttpException(403, Yii::t('Api.content', 'You must be authenticated to access this action.'));
         }
+
+		if ($model->password != "")
+		{
+			if (!($this->user != NULL && $this->user->role->id >= 7))
+			{
+				if (Cii::get($_GET, 'password', false) == false)
+					throw new CHttpException(401, Yii::t('Api.content', 'A password is required to view this post'));
+
+				if ($model->password != Cii::encrypt(Cii::get($_GET, 'password')))
+					throw new CHttpException(401, Yii::t('Api.content', 'Invalid password'));
+		}
+		}
 
         return $model->getApiAttributes(array('password', 'like_count'));
     }
@@ -253,6 +185,7 @@ class ContentController extends ApiController
     {
         if ($id===NULL)
             throw new CHttpException(400, Yii::t('Api.content', 'Missing id'));
+
         $model = Content::model()->findByPk($id);
         if ($model===NULL)
             throw new CHttpException(404, Yii::t('Api.content', 'An entry with the id of {{id}} was not found', array('{{id}}' => $id)));
@@ -275,12 +208,22 @@ class ContentController extends ApiController
         // A list of attributes that we want to hide
         $attributes = array('password', 'like_count');
 
-        $model->status = 1;
+		if ($this->user == NULL || $this->user->role->id == 1)
+        	$model->status = 1;
+
         $response = array();
         foreach ($model->search()->getData() as $content)
         {
-            if ($content->isPublished() && ($content->password == "" || Cii::decrypt($content->password) == ""))
-                $response[] = $content->getApiAttributes($attributes);
+            if ($content->isPublished() || $this->user->role->id >= 5)
+			{
+				$data = $content->getApiAttributes($attributes);
+				// If the content has a password, just remove the content
+				if ($content->password != "" && ($this->user == NULL || $this->user->role->id == 1))
+					$data['content'] = NULL;
+
+
+                $response[] = $data;
+			}
         }
 
         return $response;
