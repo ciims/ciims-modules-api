@@ -135,17 +135,6 @@ class ApiController extends CiiController
         if (!Yii::app()->getRequest()->isSecureConnection && Cii::getConfig('forceSecureSSL', false))
             $this->redirect('https://' . Yii::app()->getRequest()->serverName . Yii::app()->getRequest()->requestUri);
 
-        if ((Cii::getConfig('enableAPI') != true || Cii::get(Cii::getCiiConfig(), 'allow_api', true) == false))
-        {
-            if (!in_array($this->id, array('theme', 'event', 'comment')))
-            {
-                header('HTTP/1.1 403 Access Denied');
-                $this->status = 403;
-                $this->message = Yii::t('Api.main', 'The CiiMS API is not enabled.');
-                return null;
-            }
-        }
-
 		// If content was sent as application/x-www-form-urlencoded, use it. Otherwise, assume raw JSON was sent and convert it into
 		// the $_POST variable for ease of use
 		if (Yii::app()->request->rawBody != "" && empty($_POST)) 
