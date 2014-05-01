@@ -221,7 +221,6 @@ class ContentController extends ApiController
 				if ($content->password != "" && ($this->user == NULL || $this->user->role->id == 1))
 					$data['content'] = NULL;
 
-
                 $response[] = $data;
 			}
         }
