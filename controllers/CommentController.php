@@ -15,11 +15,11 @@ class CommentController extends ApiController
             ),
         	array('allow',
         		'actions' => array('indexPost', 'flagPost'),
-        		'expression' => '$user!=NULL'
+        		'expression' => '$user!=NULL&&$user->role->hasPermissions("comment")'
         	),
             array('allow',
                 'actions' => array('indexDelete'),
-                'expression' => '$user!=NULL&&($user->isSiteManager()||$user->isAdmin())'
+                'expression' => '$user!=NULL&&($user->role->hasPermission("manage"))'
             ),
             array('deny')
         );

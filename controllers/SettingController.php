@@ -1,7 +1,5 @@
 <?php
 
-Yii::import('application.modules.dashboard.components.CiiSettingsModel');
-Yii::import('application.modules.dashboard.models.*');
 class SettingController extends ApiController
 {
 	/**
@@ -13,7 +11,7 @@ class SettingController extends ApiController
     {   
         return array(
             array('allow',
-               'expression' => '$user!=NULL&&($user->isSiteManager()||$user->isAdmin())'
+               'expression' => '$user!=NULL&&($user->role->hasPermission("manage"))'
             ),
             array('deny') 
         );  
@@ -123,9 +121,9 @@ class SettingController extends ApiController
 	 * [GET] [/api/setting/theme]
 	 * @class Theme
 	 */
-	public function actionTheme($type='desktop')
+	public function actionTheme()
 	{
-		$model = $this->getTheme($type);
+		$model = $this->getTheme();
 		return $this->getModelAttributes($model);
 	}
 
@@ -133,9 +131,9 @@ class SettingController extends ApiController
 	 * [POST] [/api/setting/theme]
 	 * @class Theme
 	 */
-	public function actionThemePost($type='desktop')
+	public function actionThemePost()
 	{
-		$model = $this->getThemeAttributes($type);
+		$model = $this->getThemeAttributes();
 		return $this->loadData($_POST, $model);
 	}
 
@@ -144,17 +142,9 @@ class SettingController extends ApiController
 	 * @param  string $type The data type to load
 	 * @return Theme
 	 */
-	private function getThemeAttributes($type)
+	private function getThemeAttributes()
 	{
-		$theme = null;
-		if ($type == 'desktop')
-			$theme = Cii::getConfig('theme', 'default');
-		else if ($type == 'mobile')
-			$theme = Cii::getConfig('mobileTheme');
-		else if ($type == 'tablet')
-			$theme = Cii::getConfig('tabletTheme');
-		else
-			$theme = Cii::getConfig('theme', 'default');
+		$theme = Cii::getConfig('theme', 'default');
 
 		if (!file_exists(Yii::getPathOfAlias('webroot.themes.' . $theme) . DIRECTORY_SEPARATOR . 'Theme.php'))
 			throw new CHttpException(400, Yii::t('Api.setting',  'The requested theme type is not set. Please set a theme before attempting to change theme settings.'));
@@ -178,7 +168,7 @@ class SettingController extends ApiController
 	 */
 	private function loadData($post, &$model)
 	{
-		$model->populate($_POST, true);
+		$model->populate($_POST, false);
 
 		if ($model->save())
 			return $this->getModelAttributes($model);

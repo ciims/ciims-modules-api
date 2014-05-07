@@ -10,7 +10,7 @@ class ContentController extends ApiController
             ),
             array('allow',
                 'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete', 'drafts', 'my', 'myDrafts'),
-                'expression' => '$user!=NULL&&'
+                'expression' => '$user!=NULL'
             ),
             array('deny')
         );

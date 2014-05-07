@@ -15,7 +15,7 @@ class CategoryController extends ApiController
             ),
             array('allow',
                 'actions' => array('indexPost', 'indexDelete'),
-                'expression' => '$user!=NULL&&($user->isSiteManager()||$user->isAdmin())'
+                'expression' => '$user!=NULL&&$user->role->hasPermission("manage")'
             ),
             array('deny') 
         );  
