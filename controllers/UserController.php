@@ -80,7 +80,7 @@ class UserController extends ApiController
             if ($user == NULL)
                 throw new CHttpException(404, Yii::t('Api.user', 'A user with the id of {{id}} was not found.', array('{{id}}' => $id)));
 
-            return $user->getAPIAttributes(array('password', 'activation_key'));
+            return $user->getAPIAttributes(array('password'));
 		}
 
 		// Prevent non management users from doing a blanket queryall
@@ -98,10 +98,14 @@ class UserController extends ApiController
 			'pageVar' => 'page'
 		);
 
+		// Throw a 404 if we exceed the number of available results
+		if ($dataProvider->totalItemCount == 0 || ($dataProvider->totalItemCount / ($dataProvider->itemCount * Cii::get($_GET, 'page', 1))) < 1)
+			throw new CHttpException(404, Yii::t('Api.user', 'No results found'));
+
 		$response = array();
 
 		foreach ($dataProvider->getData() as $user)
-			$response[] = $user->getAPIAttributes(array('password', 'activation_key'), array('role'));
+			$response[] = $user->getAPIAttributes(array('password'), array('role', 'metadata'));
 
 		return $response;
 	}
@@ -124,30 +128,36 @@ class UserController extends ApiController
 	}
 
 	/**
+	 * [POST] [/user/register]
 	 * API endpoint for registering a user
 	 * @return array
 	 */
 	public function actionRegisterPost()
 	{
-		$model = new RegisterForm;
+		$this->createUser(false);
+	}
+
+	/**
+	 * [POST] [/user/invite]
+	 * Invites a user to join the blog as a collaborator
+	 * @return mixed
+	 */
+	public function actionInvitePost()
+	{
+		$model = new InvitationForm;
 
 		if (!empty($_POST))
 		{
 			$model->attributes = $_POST;
 
             // Save the user's information
-			if ($model->save())
-		    	return $model->getAPIAttributes(array('password', 'activation_key'));
+			if ($model->invite())
+		    	return Users::model()->findByAttributes(array('email' => $_POST['email']))->getAPIAttributes(array('password'), array('role', 'metadata'));
 		    else
 		    	return $this->returnError(400, NULL, $model->getErrors());
 		}
 
 		throw new CHttpException(400, Yii::t('Api.user', 'An unexpected error occured fulfilling your request.'));
-	}
-
-	public function actionInvitePost()
-	{
-		// TODO: implement Invitation functionality
 	}
 
 	/**
@@ -157,15 +167,27 @@ class UserController extends ApiController
 	 */
 	private function updateUser($id)
 	{
+		$override = false;
 		$model = new ProfileForm;
-        $model->load($id);
+        
+        // Allow admins to override the self password check
+        if($this->user->role->hasPermission("manage"))
+        	$override = true;
+
+        $model->load($id, $override);
 
 		if (!empty($_POST))
 		{
+			// Prevent users from promoting or demoting themselves
+			// TODO: Figure out how to move this to the ProfileForm model
+			// 	     Since $this->user != Yii::app()->user
+			if ($this->user->id == $_POST['id'] && Cii::get($_POST, 'user_role', $this->user->role->id) != $this->user->role->id)
+				$model->addError('user_role', Yii::t('ciims.models.ProfileForm', 'You cannot promote or demote yourself.'));
+
             $model->attributes = $_POST;
 
-			if ($model->save(false))
-		    	return $model->getAPIAttributes(array('password', 'activation_key'));
+			if ($model->save())
+		    	return Users::model()->findByAttributes(array('email' => $model->email))->getAPIAttributes(array('password'), array('role', 'metadata'));
 		    else
 		    	return $this->returnError(400, NULL, $model->getErrors());
 		}
@@ -177,7 +199,7 @@ class UserController extends ApiController
 	 * Utilizes the registration form to create a new user
 	 * @return array
 	 */
-	private function createUser()
+	private function createUser($sendEmail = true)
 	{
 		$model = new RegisterForm;
 
@@ -186,8 +208,8 @@ class UserController extends ApiController
 			$model->attributes = $_POST;
 
             // Save the user's information
-			if ($model->save(false))
-		    	return $model->getAPIAttributes(array('password', 'activation_key'));
+			if ($model->save($sendEmail))
+		    	return Users::model()->findByAttributes(array('email' => $_POST['email']))->getAPIAttributes(array('password'), array('role', 'metadata'));
 		    else
 		    	return $this->returnError(400, NULL, $model->getErrors());
 		}

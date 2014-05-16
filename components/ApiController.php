@@ -192,7 +192,7 @@ class ApiController extends CiiController
         
         echo CJSON::encode(array(
             'status' => $status != NULL ? $status : $this->status,
-            'message' => $message != NULL ? $message : $this->message,
+            'message' => $message != NULL ? $message : ($this->message == NULL ? Yii::t('Api.main', 'Your request was successfully fulfilled') : $this->message),
             'response' => $response
         ));
         Yii::app()->end();
