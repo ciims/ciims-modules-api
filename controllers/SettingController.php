@@ -11,7 +11,7 @@ class SettingController extends ApiController
     {   
         return array(
             array('allow',
-               'expression' => '$user!=NULL&&($user->role->hasPermission("manage"))'
+                'expression' => '$user!=NULL&&($user->role->hasPermission("manage"))'
             ),
             array('deny') 
         );  
@@ -55,6 +55,23 @@ class SettingController extends ApiController
 	{
 		$model = new EmailSettings;
 		return $this->loadData($_POST, $model);
+	}
+
+	/**
+	 * [GET] [/api/settings/emailtest]
+	 * Provides functionality to send a test email
+	 */
+	public function actionEmailTest()
+	{
+		$data = $this->sendEmail($this->user,  Yii::t('Api.settings', 'CiiMS Test Email'), 'application.modules.api.views.email.test', array(), true, true, true, true);
+
+		if ($data !== true)
+			throw new CHttpException(400, $data);
+
+		$this->message = Yii::t('Api.settings', 'CiiMS was successfully able to send an email to {{email}}. Please verify that you recieved the test email.', array(
+			'{{email}}' => CHtml::tag('strong', array(), $this->user->email)
+		));
+		return $data;
 	}
 
 	/**
@@ -135,6 +152,15 @@ class SettingController extends ApiController
 	{
 		$model = $this->getThemeAttributes();
 		return $this->loadData($_POST, $model);
+	}
+
+	/**
+	 * [GET] [/api/settings/flushcache]
+	 * @return boolean
+	 */
+	public function actionFlushCache()
+	{
+		return Yii::app()->cache->flush();
 	}
 
 	/**

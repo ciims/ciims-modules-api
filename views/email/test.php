@@ -1,0 +1,1 @@
+<?php echo Yii::t('Api.settings', 'CiiMS is properly configured to send emails!'); ?>
