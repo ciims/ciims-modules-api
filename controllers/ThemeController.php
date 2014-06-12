@@ -12,7 +12,12 @@ class ThemeController extends ApiController
         return array(
             array('allow',
                 'actions' => array('callback')
-            )
+            ),
+             array('allow',
+                'actions' => array('installed', 'install', 'uninstall', 'list', 'isinstalled', 'details'),
+                'expression' => '$user!=NULL&&$user->role->hasPermission("manage")'
+            ),
+            array('deny')
         );  
     }
 
@@ -22,37 +27,67 @@ class ThemeController extends ApiController
      */
     public function actionInstalled()
     {
-        $directories = glob(Yii::getPathOfAlias('webroot.themes') . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
-        foreach($directories as $dir)
-        {
-            $json = CJSON::decode(file_get_contents($dir . DIRECTORY_SEPARATOR . 'composer.json'));
-            $name = $json['name'];
-            $key = str_replace('ciims-themes/', '', $name);
-            $files[$key] = array(
-                'path' => $dir,
-                'name' => $name,
-            );
-        }
-
-        return $files;
+        $themeSettings = new ThemeSettings;
+        return $themeSettings->getThemes();
     }
 
     /**
      * Determines if a particular theme (given by $name) is installed
      * @param string $name
-     * @return bool
+     * @return boolean
      */
     public function actionIsInstalled($name=false)
     {
-    	if ($name == false)
-   			throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
+        if ($name == false)
+            throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
 
-    	$installed = $this->actionInstalled();
-    	$keys = array_keys($installed);
-    	if (in_array($name, $keys))
+        $installed = $this->actionInstalled();
+        $keys = array_keys($installed);
+        if (in_array($name, $keys))
             return true;
         
         throw new CHttpException(404, Yii::t('Api.Theme', 'Theme is not installed'));
+    }
+
+    /**
+     * Installs a theme from packagist using the provided name
+     * @return boolean
+     */
+    public function actionInstall($name=false)
+    {
+        if ($name == false)
+            return false;
+
+        // If the theme is already installed, then the install succeeded... at some point... in the past... so... return true!
+        if ($this->actionIsInstalled($name))
+            return true;
+
+        $details = $this->actionDetails($name);
+
+        // TODO: Shim up once we actually have themes in packagist
+    }
+
+    /**
+     * Uninstalls a theme by name
+     * @return boolean
+     */
+    public function actionUninstall($name=false)
+    {
+        if ($name == false)
+            return false;
+
+        if ($name == 'default')
+            throw new CHttpException(400, Yii::t('Api.theme', 'You cannot uninstall the default theme.'));
+        if (!$this->actionIsInstalled($name))
+            return false;
+
+        $installedThemes = $this->actionInstalled();
+        $theme = $installedThemes[$name]['path'];
+
+        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($theme, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path)
+            $path->isDir() ? rmdir($path->getPathname()) : unlink($path->getPathname());
+        
+        return rmdir($theme);
     }
 
     /**
@@ -99,7 +134,12 @@ class ThemeController extends ApiController
    		{
    			$array = array();
    			$packagist = new Packagist\Api\Client();
-   			$theme = $packagist->get('ciims-themes/'.$name);
+
+            try {
+   			  $theme = $packagist->get('ciims-themes/'.$name);
+            } catch (Exception $e) {
+                throw new CHttpException($e->getResponse()->getStatusCode(), $e->getResponse()->getReasonPhrase());
+            }
 
    			// List maintainers
    			$maintainers = array();
