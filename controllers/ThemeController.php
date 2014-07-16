@@ -14,7 +14,7 @@ class ThemeController extends ApiController
                 'actions' => array('callback')
             ),
              array('allow',
-                'actions' => array('installed', 'install', 'uninstall', 'list', 'isinstalled', 'details'),
+                'actions' => array('installed', 'install', 'update', 'updateCheck', 'uninstall', 'list', 'isinstalled', 'details'),
                 'expression' => '$user!=NULL&&$user->role->hasPermission("manage")'
             ),
             array('deny')
@@ -36,7 +36,7 @@ class ThemeController extends ApiController
      * @param string $name
      * @return boolean
      */
-    public function actionIsInstalled($name=false)
+    public function actionIsInstalled($name=false, $return = false)
     {
         if ($name == false)
             throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
@@ -45,26 +45,142 @@ class ThemeController extends ApiController
         $keys = array_keys($installed);
         if (in_array($name, $keys))
             return true;
-        
+
+        if ($return)
+            return false;
+
         throw new CHttpException(404, Yii::t('Api.Theme', 'Theme is not installed'));
     }
 
     /**
-     * Installs a theme from packagist using the provided name
+     * Checks if an update is necessary
+     * @param string $name
+     * @return boolean
+     */
+    private function updateCheck($name)
+    {
+        $filePath = Yii::getPathOfAlias('webroot.themes').DS.$name;
+        $details = $this->actionDetails($name);
+
+        if (file_exists($filePath))
+        {
+            $version = file_get_contents($filePath.DS.'VERSION');
+            if ($version != $details['latest-version'])
+                return true;
+        }
+
+        return false;
+
+    }
+
+    /**
+     * Exposed action to check for an update
+     * @param string $name
+     * @return boolean
+     */
+    public function actionUpdateCheck($name=false)
+    {
+        if ($name == false)
+            return false;
+
+        if ($this->updateCheck($name))
+            return true;
+
+        return $this->returnError(200, Yii::t('Api.main', 'Update is not required'), false);
+    }
+
+    /**
+     * Performs an update
+     * @return boolean
+     */
+    public function actionUpdate($name=false)
+    {
+        if ($name == false)
+            return false;
+
+        // Performs an update check, and if an update is available performs the update
+        if ($this->updateCheck($name))
+            return $this->actionInstall($name);
+    }
+
+    /**
+     * Installs and or updates a theme from packagist using the provided name
      * @return boolean
      */
     public function actionInstall($name=false)
     {
         if ($name == false)
             return false;
-
-        // If the theme is already installed, then the install succeeded... at some point... in the past... so... return true!
-        if ($this->actionIsInstalled($name))
-            return true;
-
+        
+        $filePath = Yii::getPathOfAlias('webroot.themes').DS.$name;
         $details = $this->actionDetails($name);
 
-        // TODO: Shim up once we actually have themes in packagist
+        // If the theme is already installed, make sure it is the correct version, otherwise we'll be performing an upgrade
+        if ($this->actionIsInstalled($name, true))
+        {
+            $version = file_get_contents($filePath.DS.'VERSION');
+
+            if ($version == $details['latest-version'])
+                return true;
+        }       
+
+        // Set several variables to store the various paths we'll need
+        $tmpPath = Yii::getPathOfAlias('application.runtime.themes').DS.$name;
+        $themesPath = Yii::getPathOfAlias('application.runtime').DS.'themes';
+        $zipPath = $themesPath.DS.$details['sha'].'.zip';
+        
+        // Verify the temporary directory exists
+        if (!file_exists($themesPath))
+            mkdir($themesPath);
+
+        // Download the ZIP package to the runtime/themes temporary directory
+        $this->downloadPackage($details['sha'], $details['file'], Yii::getPathOfAlias('application.runtime.themes'));
+        $zip = new ZipArchive;
+        $response = $zip->open($zipPath, ZipArchive::CREATE);
+
+        // If we can open the file
+        if ($response  === true)
+        {
+            // And we were able to extract it
+            if ($zip->extractTo($themesPath.DS.$details['sha']))
+            {
+                // Close the ZIP connection
+                $zip->close();
+
+                // Delete the downloaded ZIP file
+                unlink($zipPath);
+
+                // Move the folders around so we're operating on the bare folder, then delete the teporary folder
+                rename($themesPath.DS.$details['sha'].DS.'ciims-themes-'.$name.'-'.$details['latest-version'], $tmpPath);
+                rmdir(str_replace('.zip', '', $zipPath));
+
+                // Store the version with the theme
+                file_put_contents($tmpPath.'/VERSION', $details['latest-version']);
+
+                // If a theme is already installed that has that name, rename it to "$filePath-old"
+                if (file_exists($filePath) && is_dir($filePath))
+                    rename($filePath, $filePath . "-old");
+
+                // Then copy over the theme from the tmpPath to the final destination path
+                rename($tmpPath, $filePath);
+
+                // Then purge the -old directories
+                if (file_exists($filePath . "-old"))
+                {
+                    foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($filePath . "-old", FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path)
+                        $path->isDir() ? rmdir($path->getPathname()) : unlink($path->getPathname());
+                    
+                    rmdir($filePath . "-old");
+                }
+
+                // Purge the cache
+                return Yii::app()->cache->delete('settings_themes');
+            }
+
+        }
+
+        unlink($tmpPath.'.zip');
+        throw new CHttpException(500, 'Unable to extract downloaded ZIP package');
     }
 
     /**
@@ -78,6 +194,7 @@ class ThemeController extends ApiController
 
         if ($name == 'default')
             throw new CHttpException(400, Yii::t('Api.theme', 'You cannot uninstall the default theme.'));
+
         if (!$this->actionIsInstalled($name))
             return false;
 
@@ -129,7 +246,7 @@ class ThemeController extends ApiController
    		if ($name == false)
    			throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
 
-   		$result = Yii::app()->cache->get('packagist_ciims-themes/'.$name);
+   		$result = false;//Yii::app()->cache->get('packagist_ciims-themes/'.$name);
    		if ($result === false)
    		{
    			$array = array();
@@ -161,9 +278,10 @@ class ThemeController extends ApiController
 
    				// Push the version
    				$versionId = preg_replace("/[^0-9]/", "", $version);
+
    				$versions[$versionId] = $version;
    				if ($versionId > $latestVersion)
-   					$latestVersion = $version;
+   					$latestVersion = $versionId;
    			}
 
    			$result = array(
@@ -171,9 +289,9 @@ class ThemeController extends ApiController
    				'description' => $theme->getDescription(),
    				'repository' => $theme->getRepository(),
    				'maintainers' => $maintainers,
-				'latest-version' => $latestVersion,
-				'sha' => $info[$latestVersion]->getSource()->getReference(),
-				'file' => $theme->getRepository().'/releases/download/'.$latestVersion.'/main.zip',
+				'latest-version' => $versions[$latestVersion],
+				'sha' => $info[$versions[$latestVersion]]->getSource()->getReference(),
+				'file' => $theme->getRepository().'/archive/'.$versions[$latestVersion].'.zip',
    				'downloads' => array(
    					'total' => $theme->getDownloads()->getTotal(),
    					'monthly' => $theme->getDownloads()->getMonthly(),
@@ -210,4 +328,36 @@ class ThemeController extends ApiController
 
 		throw new CHttpException(404, Yii::t('Api.Theme', 'Missing callback method.'));
 	}
+
+    /**
+     * Retrieves a file from our CDN provider and returns it
+     * WARNING: This has the potential to return a _very_ large response object that can exceed PHP's MAX_MEMORY settings
+     *
+     * @param string $file  The Path to the package ZIP file
+     * @param string $id
+     * @return ZIP Package
+     */
+    private function downloadPackage($id, $file, $path)
+    {
+        // We're downloading a file - prevent the client aborting the process from screwing up the download
+        // and ensure that we have sufficient time to complete it
+        ignore_user_abort(true);
+        set_time_limit(0);
+
+        $fp = fopen($path . DIRECTORY_SEPARATOR . $id . '.zip', 'w+');
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_FILE => $fp,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_URL => $file,
+            CURLOPT_BINARYTRANSFER => true,
+            CURLOPT_CAINFO => Yii::getPathOfAlias('application.config.certs') . DIRECTORY_SEPARATOR . 'BaltimoreCyberTrustRootCA.crt'
+        ));
+
+        curl_exec($curl);
+        curl_close($curl);
+        fclose($fp);
+
+        return;
+    }
 }

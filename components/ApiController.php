@@ -190,6 +190,10 @@ class ApiController extends CiiController
         header("Access-Control-Allow-Headers: x-auth-token, x-auth-email");
         header('Access-Control-Allow-Methods: PUT, PATCH, DELETE, POST, GET, OPTIONS');
         
+        // Back-convert the string to a boolean
+        if ($response === 'false')
+            $response = false;
+
         echo CJSON::encode(array(
             'status' => $status != NULL ? $status : $this->status,
             'message' => $message != NULL ? $message : ($this->message == NULL ? Yii::t('Api.main', 'Your request was successfully fulfilled') : $this->message),
@@ -227,6 +231,10 @@ class ApiController extends CiiController
        	else
        		$this->message = $message;
 
+        // This is a special condition in Yii. We need to convert it back
+        if ($response == false)
+            return 'false';
+        
         return $response;
     }
 }
