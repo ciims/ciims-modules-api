@@ -2,7 +2,7 @@
 
 class ThemeController extends ApiController
 {
-	/**
+    /**
      * Specifies the access control rules.
      * This method is used by the 'accessControl' filter.
      * @return array access control rules
@@ -62,12 +62,14 @@ class ThemeController extends ApiController
         $filePath = Yii::getPathOfAlias('webroot.themes').DS.$name;
         $details = $this->actionDetails($name);
 
-        if (file_exists($filePath))
+        if (file_exists($filePath.DS.'VERSION'))
         {
             $version = file_get_contents($filePath.DS.'VERSION');
             if ($version != $details['latest-version'])
                 return true;
         }
+        else
+            return true;
 
         return false;
 
@@ -84,7 +86,7 @@ class ThemeController extends ApiController
             return false;
 
         if ($this->updateCheck($name))
-            return true;
+            return $this->returnError(200, Yii::t('Api.main', 'Update is available'), true);
 
         return $this->returnError(200, Yii::t('Api.main', 'Update is not required'), false);
     }
@@ -118,10 +120,13 @@ class ThemeController extends ApiController
         // If the theme is already installed, make sure it is the correct version, otherwise we'll be performing an upgrade
         if ($this->actionIsInstalled($name, true))
         {
-            $version = file_get_contents($filePath.DS.'VERSION');
+            if (file_exists($filePath.DS.'VERSION'))
+            {
+                $version = file_get_contents($filePath.DS.'VERSION');
 
-            if ($version == $details['latest-version'])
-                return true;
+                if ($version == $details['latest-version'])
+                    return true;
+            }
         }       
 
         // Set several variables to store the various paths we'll need
@@ -212,122 +217,122 @@ class ThemeController extends ApiController
      * @return array
      */
     public function actionList()
-   	{
-		$themes = Yii::app()->cache->get('packagist_themes');
-		if ($themes === false)
-		{
-			$packagist = new Packagist\Api\Client();
+    {
+        $themes = Yii::app()->cache->get('packagist_themes');
+        if ($themes === false)
+        {
+            $packagist = new Packagist\Api\Client();
 
-			foreach ($packagist->search('ciims-themes') as $result)
-			{
-			    if (strpos($result->getName(), 'ciims-themes') !== false)
-			    {
-			        $themes[] = array(
-			        	'name' => $result->getName(),
-			        	'description' => $result->getDescription(),
-			        	'url' => $result->getUrl(),
-			        	'downloads' => $result->getDownloads()
-			        );
-			    }
-			}
-			Yii::app()->cache->set('packagist_themes', $themes, 900);
-		}
+            foreach ($packagist->search('ciims-themes') as $result)
+            {
+                if (strpos($result->getName(), 'ciims-themes') !== false)
+                {
+                    $themes[] = array(
+                        'name' => $result->getName(),
+                        'description' => $result->getDescription(),
+                        'url' => $result->getUrl(),
+                        'downloads' => $result->getDownloads()
+                    );
+                }
+            }
+            Yii::app()->cache->set('packagist_themes', $themes, 900);
+        }
 
-		return $themes;
-   	}
+        return $themes;
+    }
 
-   	/**
-   	 * Retrieves the details about a particular theme
-   	 * @param string $name
-   	 * @return array
-   	 */
-   	public function actionDetails($name=false)
-   	{
-   		if ($name == false)
-   			throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
+    /**
+     * Retrieves the details about a particular theme
+     * @param string $name
+     * @return array
+     */
+    public function actionDetails($name=false)
+    {
+        if ($name == false)
+            throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
 
-   		$result = false;//Yii::app()->cache->get('packagist_ciims-themes/'.$name);
-   		if ($result === false)
-   		{
-   			$array = array();
-   			$packagist = new Packagist\Api\Client();
+        $result = Yii::app()->cache->get('packagist_ciims-themes/'.$name);
+        if ($result === false)
+        {
+            $array = array();
+            $packagist = new Packagist\Api\Client();
 
             try {
-   			  $theme = $packagist->get('ciims-themes/'.$name);
+              $theme = $packagist->get('ciims-themes/'.$name);
             } catch (Exception $e) {
                 throw new CHttpException($e->getResponse()->getStatusCode(), $e->getResponse()->getReasonPhrase());
             }
 
-   			// List maintainers
-   			$maintainers = array();
-   			$versions = array();
-   			$latestVersion = 0;
-   			foreach ($theme->getMaintainers() as $maintainer);
-   				$maintainers[] = array(
-   					'name' => $maintainer->getName(),
-   					'email' => $maintainer->getEmail(),
-   					'homepage' => $maintainer->getHomepage()
-   				);
+            // List maintainers
+            $maintainers = array();
+            $versions = array();
+            $latestVersion = 0;
+            foreach ($theme->getMaintainers() as $maintainer);
+                $maintainers[] = array(
+                    'name' => $maintainer->getName(),
+                    'email' => $maintainer->getEmail(),
+                    'homepage' => $maintainer->getHomepage()
+                );
 
-   			$info = $theme->getVersions();
-   			foreach ($info as $version=>$details)
-   			{
-   				// Ignore dev-master
-   				if ($version == 'dev-master')
-   					continue;
+            $info = $theme->getVersions();
+            foreach ($info as $version=>$details)
+            {
+                // Ignore dev-master
+                if ($version == 'dev-master')
+                    continue;
 
-   				// Push the version
-   				$versionId = preg_replace("/[^0-9]/", "", $version);
+                // Push the version
+                $versionId = preg_replace("/[^0-9]/", "", $version);
 
-   				$versions[$versionId] = $version;
-   				if ($versionId > $latestVersion)
-   					$latestVersion = $versionId;
-   			}
+                $versions[$versionId] = $version;
+                if ($versionId > $latestVersion)
+                    $latestVersion = $versionId;
+            }
 
-   			$result = array(
-   				'name' => $theme->getName(),
-   				'description' => $theme->getDescription(),
-   				'repository' => $theme->getRepository(),
-   				'maintainers' => $maintainers,
-				'latest-version' => $versions[$latestVersion],
-				'sha' => $info[$versions[$latestVersion]]->getSource()->getReference(),
-				'file' => $theme->getRepository().'/archive/'.$versions[$latestVersion].'.zip',
-   				'downloads' => array(
-   					'total' => $theme->getDownloads()->getTotal(),
-   					'monthly' => $theme->getDownloads()->getMonthly(),
-   					'daily' => $theme->getDownloads()->getDaily()
-   				)
-   			);
-   			
-   			Yii::app()->cache->set('packagist_ciims-themes/'.$name, $result, 900);
-   		}
+            $result = array(
+                'name' => $theme->getName(),
+                'description' => $theme->getDescription(),
+                'repository' => $theme->getRepository(),
+                'maintainers' => $maintainers,
+                'latest-version' => $versions[$latestVersion],
+                'sha' => $info[$versions[$latestVersion]]->getSource()->getReference(),
+                'file' => $theme->getRepository().'/archive/'.$versions[$latestVersion].'.zip',
+                'downloads' => array(
+                    'total' => $theme->getDownloads()->getTotal(),
+                    'monthly' => $theme->getDownloads()->getMonthly(),
+                    'daily' => $theme->getDownloads()->getDaily()
+                )
+            );
+            
+            Yii::app()->cache->set('packagist_ciims-themes/'.$name, $result, 900);
+        }
 
-   		return $result;
-   	}
+        return $result;
+    }
 
-	/**
-	 * Allows themes to have their own dedicated callback resources.
-	 *
-	 * This enables theme developers to not have to hack CiiMS Core in order to accomplish stuff
-	 * @param  string $method The method of the current theme they want to call
-	 * @return The output or action of the callback
-	 */
-	public function actionCallback($theme=NULL, $method=NULL)
-	{
-		if ($theme == NULL)
-			throw new CHttpException(400, Yii::t('Api.Theme', 'Missing Theme'));
+    /**
+     * Allows themes to have their own dedicated callback resources.
+     *
+     * This enables theme developers to not have to hack CiiMS Core in order to accomplish stuff
+     * @param  string $method The method of the current theme they want to call
+     * @return The output or action of the callback
+     */
+    public function actionCallback($theme=NULL, $method=NULL)
+    {
+        if ($theme == NULL)
+            throw new CHttpException(400, Yii::t('Api.Theme', 'Missing Theme'));
 
-		if ($method == NULL)
-			throw new CHttpException(400, Yii::t('Api.Theme', 'Method name is missing'));
+        if ($method == NULL)
+            throw new CHttpException(400, Yii::t('Api.Theme', 'Method name is missing'));
 
-		Yii::import('webroot.themes.' . $theme . '.Theme');
-		$theme = new Theme;
+        Yii::import('webroot.themes.' . $theme . '.Theme');
+        $theme = new Theme;
 
-		if (method_exists($theme, $method))
-			return $theme->$method($_POST);
+        if (method_exists($theme, $method))
+            return $theme->$method($_POST);
 
-		throw new CHttpException(404, Yii::t('Api.Theme', 'Missing callback method.'));
-	}
+        throw new CHttpException(404, Yii::t('Api.Theme', 'Missing callback method.'));
+    }
 
     /**
      * Retrieves a file from our CDN provider and returns it
