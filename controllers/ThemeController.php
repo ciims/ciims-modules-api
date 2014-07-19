@@ -14,11 +14,36 @@ class ThemeController extends ApiController
                 'actions' => array('callback')
             ),
              array('allow',
-                'actions' => array('installed', 'install', 'update', 'updateCheck', 'uninstall', 'list', 'isinstalled', 'details'),
+                'actions' => array('installed', 'install', 'changetheme', 'update', 'updateCheck', 'uninstall', 'list', 'isinstalled', 'details'),
                 'expression' => '$user!=NULL&&$user->role->hasPermission("manage")'
             ),
             array('deny')
         );  
+    }
+
+    /**
+     * Changes the theme to the one with the given $name
+     * @param string $name
+     * @return boolean
+     */
+    public function actionChangeTheme($name=false)
+    {
+        if ($name == false)
+            throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
+
+        if ($this->actionIsInstalled($name))
+        {
+            $model = Configuration::model()->findByAttributes(array('key' => 'theme'));
+            $model->value = $name;
+
+            if ($model->save())
+            {
+                Yii::app()->cache->delete('settings_theme');
+                return Cii::getConfig('theme');
+            }
+        }
+
+        return $this->returnError(200, Yii::t('Api.main', 'Unable to change theme'), false);
     }
 
     /**
@@ -102,7 +127,13 @@ class ThemeController extends ApiController
 
         // Performs an update check, and if an update is available performs the update
         if ($this->updateCheck($name))
-            return $this->actionInstall($name);
+        {
+            if (!$this->actionInstall($name))
+                return $this->returnError(500, Yii::t('Api.main', 'Update failed'), false);
+        }
+
+        // If an update is unecessary, dump the current details
+        return $this->actionDetails($name);
     }
 
     /**
@@ -179,7 +210,8 @@ class ThemeController extends ApiController
                 }
 
                 // Purge the cache
-                return Yii::app()->cache->delete('settings_themes');
+                Yii::app()->cache->delete('settings_themes');
+                return true;
             }
 
         }

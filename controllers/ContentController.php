@@ -9,8 +9,12 @@ class ContentController extends ApiController
                 'actions' => array('index', 'tag')
             ),
             array('allow',
-                'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete', 'drafts', 'my', 'myDrafts'),
+                'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete'),
                 'expression' => '$user!=NULL'
+            ),
+            array('allow',
+                'actions' => array('publish', 'unpublish'),
+                'expression' => '$user->role->hasPermission("publish")'
             ),
             array('deny')
         );
@@ -19,14 +23,83 @@ class ContentController extends ApiController
     /**
      * [GET] [/content]
      * Retrieves an article by the requested id, or retrieves all articles based upon permissions
+     *
+     * NOTE: This endpoint behaves differently for authenticated and unauthenticated users. Authenticated users are show posts they can mutate, whereas
+     *
      * @param int $id   The Content id
      */
     public function actionIndex($id=NULL)
     {
-        if($id===NULL)
-            return $this->getAllContent();
-        else
-            return $this->getContent($id);
+        $model = new Content('search');
+        $model->unsetAttributes();  // clear any default values
+        if(isset($_GET['Content']))
+            $model->attributes = $_GET['Content'];
+
+        // Let the search getter do all tha hard work
+        if ($id != NULL)
+            $model->id = $id;
+
+        // Normaly users can only see published entries
+        $role = Cii::get($this->user, 'role', NULL);
+        $hiddenFields = array('category_id', 'parent_id', 'author_id');
+
+        if ($this->user == NULL)
+        {
+            $model->status = 1;
+            $model->published = 1;
+            $model->password = "";
+            array_push($hiddenFields, 'password', 'vid');
+        }
+        else if ($this->user->role->isA('admin'))
+        {
+            // Users with this role can do everything
+        }
+        else if ($this->user->role->isA('publisher') || $this->user->role->isA('author'))
+        {
+            // Restrict collaborates to only being able to see their own content 
+            $model->author_id = $this->user->id;
+        }
+        else if (UserRoles::model()->hasPermission('read', $role))
+        {
+            $model->status = 1;
+            $model->published = 1;
+            $model->password = "";
+            array_push($hiddenFields, 'password', 'vid');
+        }
+
+        // Modify the pagination variable to use page instead of Content page
+        $dataProvider = $model->search();
+        $dataProvider->pagination = array(
+            'pageVar' => 'page'
+        );
+
+        // Throw a 404 if we exceed the number of available results
+        if ($dataProvider->totalItemCount == 0 || ($dataProvider->totalItemCount / ($dataProvider->itemCount * Cii::get($_GET, 'page', 1))) < 1)
+            throw new CHttpException(404, Yii::t('Api.content', 'No results found'));
+
+        $response = array();
+
+        foreach ($dataProvider->getData() as $content)
+        {
+            $response[] = $content->getAPIAttributes($hiddenFields, array(
+                            'author' => array(
+                                'password',
+                                'activation_key',
+                                'email',
+                                'about',
+                                'user_role',
+                                'status',
+                                'created',
+                                'updated'
+                            ), 
+                            'category',
+                            'metadata' => array(
+                                'content_id'
+                            )
+                        ));
+        }
+
+        return $response;
     }
 
     /**
@@ -49,10 +122,10 @@ class ContentController extends ApiController
      */
     public function actionIndexDelete($id=NULL)
     {
-        if (!in_array($this->user->role->id, array(8,9)))
+        if (!$this->user->role->hasPermission('delete'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to delete entries.'));
 
-        return  Yii::app()->db->createCommand('DELETE FROM content WHERE id = :id')->bindParam(':id', $id)->execute();
+        return $this->loadModel($id)->delete();
     }
 
     /**
@@ -61,7 +134,7 @@ class ContentController extends ApiController
      */
     public function actionTag($id=NULL)
     {
-        $model = $this->getModel($id);
+        $model = $this->loadModel($id);
         return $model->getTags();
     }
 
@@ -71,9 +144,9 @@ class ContentController extends ApiController
      */
     public function actionTagPost($id=NULL)
     {
-        $model = $this->getModel($id);
+        $model = $this->loadModel($id);
 
-        if (!($this->user->id == $model->author->id || $this->user->isEditor()))
+        if (!($this->user->id == $model->author->id || $this->user->role->hasPermission('modify')))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to modify tags.'));
 
         if ($model->addTag(Cii::get($_POST, 'tag')))
@@ -89,8 +162,8 @@ class ContentController extends ApiController
      */
     public function actionTagDelete($id=NULL, $tag=NULL)
     {
-        $model = $this->getModel($id);
-        if (!($this->user->id == $model->author->id || $this->user->isEditor()))
+        $model = $this->loadModel($id);
+        if (!($this->user->id == $model->author->id || $this->user->role->hasPermission('modify')))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to modify tags.'));
 
         if ($model->removeTag(Cii::get($_POST, 'tag')))
@@ -104,7 +177,7 @@ class ContentController extends ApiController
      */
     private function createNewPost()
     {
-        if (!in_array($this->user->role->id, array(5,8,9)))
+        if (!$this->user->role->hasPermission('create'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
         $model = new Content;
@@ -124,12 +197,12 @@ class ContentController extends ApiController
      */
     private function updatePost($id)
     {
-        $model = $this->getModel($id);
+        $model = $this->loadModel($id);
 
-        if (!in_array($this->user->role->id, array(7,8,9)) || $model->author->id != $this->user->id)
+        if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
-        if ($this->user->role->id == 5)
+        if ($this->user->role->isA('author') || $this->user->role->isA('collaborator'))
             $model->author_id = $this->user->id;
 
         $vid = $model->vid;
@@ -143,45 +216,11 @@ class ContentController extends ApiController
     }
 
     /**
-     * Retrieves an entry by the given id
-     * @param int $id   The Content id
-     */
-    private function getContent($id)
-    {
-        $model = $this->getModel($id);
-
-        // Add restrictions if the item is not published
-        if (!$model->isPublished())
-        {
-            // If the user is the author or an admin
-            if ($this->user === NULL)
-                throw new CHttpException(403, Yii::t('Api.content', 'You must be authenticated to access this action.'));
-
-            if (!($this->user->id == $model->author->id || $this->user->role->id >= 7))
-                throw new CHttpException(403, Yii::t('Api.content', 'You must be authenticated to access this action.'));
-        }
-
-		if ($model->password != "")
-		{
-			if (!($this->user != NULL && $this->user->role->id >= 7))
-			{
-				if (Cii::get($_GET, 'password', false) == false)
-					throw new CHttpException(401, Yii::t('Api.content', 'A password is required to view this post'));
-
-				if ($model->password != Cii::encrypt(Cii::get($_GET, 'password')))
-					throw new CHttpException(401, Yii::t('Api.content', 'Invalid password'));
-		}
-		}
-
-        return $model->getApiAttributes(array('password', 'like_count'));
-    }
-
-    /**
      * Retrieves the model
      * @param  int    $id The content ID
      * @return Content
      */
-    private function getModel($id=NULL)
+    private function loadModel($id=NULL)
     {
         if ($id===NULL)
             throw new CHttpException(400, Yii::t('Api.content', 'Missing id'));
@@ -191,40 +230,5 @@ class ContentController extends ApiController
             throw new CHttpException(404, Yii::t('Api.content', 'An entry with the id of {{id}} was not found', array('{{id}}' => $id)));
 
         return $model;
-    }
-
-    /**
-     * Retrieves all articles that are published and not password protected
-     */
-    private function getAllContent()
-    {
-        $model = new Content('Search');
-        $model->unsetAttributes();  // clear any default values
-        unset($_GET['password']);
-        unset($_GET['like_count']);
-        if(!empty($_GET))
-            $model->attributes=$_GET;
-
-        // A list of attributes that we want to hide
-        $attributes = array('password', 'like_count');
-
-		if ($this->user == NULL || $this->user->role->id == 1)
-        	$model->status = 1;
-
-        $response = array();
-        foreach ($model->search()->getData() as $content)
-        {
-            if ($content->isPublished() || $this->user->role->id >= 5)
-			{
-				$data = $content->getApiAttributes($attributes);
-				// If the content has a password, just remove the content
-				if ($content->password != "" && ($this->user == NULL || $this->user->role->id == 1))
-					$data['content'] = NULL;
-
-                $response[] = $data;
-			}
-        }
-
-        return $response;
     }
 }
