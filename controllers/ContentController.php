@@ -30,10 +30,17 @@ class ContentController extends ApiController
      */
     public function actionIndex($id=NULL)
     {
+        YiiBase::beginProfile('block1');
         $model = new Content('search');
         $model->unsetAttributes();  // clear any default values
         if(isset($_GET['Content']))
             $model->attributes = $_GET['Content'];
+
+        // Published is now a special field in the API, so we need to do type conversions on it to make things easier in the search() method
+        if ($model->published == 'true')
+            $model->published = true;
+        else if ($model->published == 'false')
+            $model->published = false;
 
         // Let the search getter do all tha hard work
         if ($id != NULL)
@@ -43,11 +50,12 @@ class ContentController extends ApiController
         $role = Cii::get($this->user, 'role', NULL);
         $hiddenFields = array('category_id', 'parent_id', 'author_id');
 
-        if ($this->user == NULL)
+        if ($this->user == NULL || UserRoles::model()->isA('user', $this->user->role->id))
         {
             $model->status = 1;
-            $model->published = 1;
+            $model->published = true;
             $model->password = "";
+
             array_push($hiddenFields, 'password', 'vid');
         }
         else if ($this->user->role->isA('admin'))
@@ -58,13 +66,6 @@ class ContentController extends ApiController
         {
             // Restrict collaborates to only being able to see their own content 
             $model->author_id = $this->user->id;
-        }
-        else if (UserRoles::model()->hasPermission('read', $role))
-        {
-            $model->status = 1;
-            $model->published = 1;
-            $model->password = "";
-            array_push($hiddenFields, 'password', 'vid');
         }
 
         // Modify the pagination variable to use page instead of Content page
@@ -92,12 +93,15 @@ class ContentController extends ApiController
                                 'created',
                                 'updated'
                             ), 
-                            'category',
+                            'category' => array(
+                                'parent_id'
+                            ),
                             'metadata' => array(
                                 'content_id'
                             )
                         ));
         }
+        YiiBase::endProfile('block1');
 
         return $response;
     }

@@ -18,7 +18,8 @@ class ApiModule extends CWebModule
         $this->layout = false;
 
         // Disable logging for the API
-        Yii::app()->log->routes[0]->enabled = false; 
+        foreach (Yii::app()->log->routes as $k=>$v)
+            Yii::app()->log->routes[$k]->enabled = false; 
 
         // Update components
 		Yii::app()->setComponents(array(
