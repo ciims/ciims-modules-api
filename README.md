@@ -1,5 +1,7 @@
 # CiiMS API
-[![Latest Stable Version](https://poser.pugx.org/ciims-modules/api/v/stable.png)](https://packagist.org/packages/ciims-modules/api) [![Total Downloads](https://poser.pugx.org/ciims-modules/api/downloads.png)](https://packagist.org/packages/ciims-modules/api) [![Latest Unstable Version](https://poser.pugx.org/ciims-modules/api/v/unstable.png)](https://packagist.org/packages/ciims-modules/api) [![License](https://poser.pugx.org/ciims-modules/api/license.png)](https://packagist.org/packages/ciims-modules/api)
+[![Latest Version](http://img.shields.io/packagist/v/ciims-modules/api.svg?style=flat)]()
+[![Downloads](http://img.shields.io/packagist/dt/ciims-modules/api.svg?style=flat)]()
+[![Gittip](http://img.shields.io/gittip/charlesportwoodii.svg?style=flat "Gittip")](https://www.gittip.com/charlesportwoodii/)
 
 The CiiMS API module provides basic access to common methods and data. The CiiMS API is a JSON REST API which supports GET, POST, and DELETE. POSTS requests should be sent as JSON encoded form fields for simplicity.
 

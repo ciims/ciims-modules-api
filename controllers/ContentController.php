@@ -30,9 +30,9 @@ class ContentController extends ApiController
      */
     public function actionIndex($id=NULL)
     {
-        YiiBase::beginProfile('block1');
         $model = new Content('search');
         $model->unsetAttributes();  // clear any default values
+	$model->pageSize = 20;
         if(isset($_GET['Content']))
             $model->attributes = $_GET['Content'];
 
@@ -101,7 +101,6 @@ class ContentController extends ApiController
                             )
                         ));
         }
-        YiiBase::endProfile('block1');
 
         return $response;
     }
