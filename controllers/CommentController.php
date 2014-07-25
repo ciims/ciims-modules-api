@@ -15,7 +15,7 @@ class CommentController extends ApiController
             ),
         	array('allow',
         		'actions' => array('indexPost', 'flagPost'),
-        		'expression' => '$user!=NULL&&$user->role->hasPermissions("comment")'
+        		'expression' => '$user!=NULL&&$user->role->hasPermission("comment")'
         	),
             array('allow',
                 'actions' => array('indexDelete'),
