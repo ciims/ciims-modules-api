@@ -32,7 +32,8 @@ class ContentController extends ApiController
     {
         $model = new Content('search');
         $model->unsetAttributes();  // clear any default values
-	$model->pageSize = 20;
+	    $model->pageSize = 20;
+        
         if(isset($_GET['Content']))
             $model->attributes = $_GET['Content'];
 
