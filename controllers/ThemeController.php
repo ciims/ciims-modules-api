@@ -110,6 +110,9 @@ class ThemeController extends ApiController
         if ($name == false)
             return false;
 
+        if (defined('CII_CONFIG'))
+            return $this->returnError(200, Yii::t('Api.main', 'Update is not required'), false);
+
         if ($this->updateCheck($name))
             return $this->returnError(200, Yii::t('Api.main', 'Update is available'), true);
 
@@ -122,7 +125,7 @@ class ThemeController extends ApiController
      */
     public function actionUpdate($name=false)
     {
-        if ($name == false)
+        if ($name == false || defined('CII_CONFIG'))
             return false;
 
         // Performs an update check, and if an update is available performs the update
