@@ -13,6 +13,9 @@ class ContentController extends ApiController
                 'expression' => '$user!=NULL'
             ),
             array('allow',
+                'actions' => array('uploadPost'),
+            ),
+            array('allow',
                 'actions' => array('publish', 'unpublish'),
                 'expression' => '$user->role->hasPermission("publish")'
             ),
@@ -234,5 +237,11 @@ class ContentController extends ApiController
             throw new CHttpException(404, Yii::t('Api.content', 'An entry with the id of {{id}} was not found', array('{{id}}' => $id)));
 
         return $model;
+    }
+
+    public function actionUploadPost($id, $promote = 0)
+    {
+        $result = new CiiFileUpload($id, $promote);
+        return $result->uploadFile();
     }
 }
