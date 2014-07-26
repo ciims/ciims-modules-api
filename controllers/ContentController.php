@@ -132,7 +132,7 @@ class ContentController extends ApiController
         if (!$this->user->role->hasPermission('delete'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to delete entries.'));
 
-        return $this->loadModel($id)->delete();
+        return $this->loadModel($id)->deleteAllByAttributes(array('id' => $id));
     }
 
     /**
