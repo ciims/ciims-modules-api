@@ -45,14 +45,15 @@ class EventController extends ApiController
 	public function actionIndexPost()
 	{
 		$event = new Events;
-		$event->attributes = $_POST;
+		$attributes = Yii::app()->request->getParam('Event', array());
+		$event->attributes = $attributes;
 
-        if (!isset($_POST['content_id']))
-        {
-            $content = Content::model()->findByAttributes(array('slug' => Cii::get($_POST, 'uri', NULL)));
-            if ($content !== NULL)
-                $event->content_id = $content->id;
-        }
+		if ($id = Cii::get($attributes, 'content_id', false))
+		{
+			$content = Content::model()->findByPk($id);
+			if ($content != NULL)
+				$event->uri = $content->slug;
+		}
 
 		if ($event->save())
 			return $event->getApiAttributes();
