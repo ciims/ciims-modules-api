@@ -14,6 +14,7 @@ class ContentController extends ApiController
             ),
             array('allow',
                 'actions' => array('uploadPost'),
+                'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
             ),
             array('allow',
                 'actions' => array('publish', 'unpublish'),

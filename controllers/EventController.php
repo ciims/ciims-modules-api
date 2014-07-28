@@ -5,7 +5,14 @@ class EventController extends ApiController
 	public function accessRules()
 	{
 		return array(
-			array('allow')
+			array('allow',
+				'actions' => array('indexPost')
+			),
+			array('allow',
+				'actions' => array('index'),
+				'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
+			),
+			array('deny')
 		);
 	}
 
