@@ -21,8 +21,8 @@ class EventController extends ApiController
 		$model = new Events('search');
 		$model->unsetAttributes();  // clear any default values
         
-        if(isset($_GET['Events']))
-            $model->attributes = $_GET['Events'];
+        if(isset($_GET['Event']))
+            $model->attributes = $_GET['Event'];
 
         $dataProvider = $model->search();
         $dataProvider->pagination = array(
@@ -39,8 +39,8 @@ class EventController extends ApiController
             $response[] = $content->getAPIAttributes();
 
         return array(
-        	'count' => $model->count(),
-        	'data' => $response
+        	'count' => $model->count(), // This to the TOTAL count (as if pagination DNE)
+        	'data' => $response // This is JUST the paginated response
         );
 	}
 
