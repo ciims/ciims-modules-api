@@ -88,6 +88,8 @@ class EventController extends ApiController
 			if ($content != NULL)
 				$event->uri = $content->slug;
 		}
+		else
+			$event->content_id = null;
 
 		if ($event->save())
 			return $event->getApiAttributes();
