@@ -9,7 +9,7 @@ class EventController extends ApiController
 				'actions' => array('indexPost')
 			),
 			array('allow',
-				'actions' => array('index'),
+				'actions' => array('index', 'countPost'),
 				'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
 			),
 			array('deny')
@@ -42,6 +42,33 @@ class EventController extends ApiController
         	'count' => $model->count(), // This to the TOTAL count (as if pagination DNE)
         	'data' => $response // This is JUST the paginated response
         );
+	}
+
+	/**
+	 * [POST] [/event/count]
+	 * Retrieves the counts of a given set of entries over a given start and end date
+	 * @return array
+	 */
+	public function actionCountPost()
+	{
+		$ids = Yii::app()->request->getParam('ids', array());
+
+		// Default count range between the current time and the last 24 hours
+		$start = Yii::app()->request->getParam('start', date('y-m-d H:i:s'));
+		$end = Yii::app()->request->getParam('end', date('y-m-d H:i:s', (time()-(24*60*60))));
+
+		$response = array();
+
+		foreach($ids as $id)
+		{
+			$criteria = new CDbCriteria;
+			$criteria->compare('content_id', $id);
+			$criteria->addBetweenCondition('created', $end, $start);
+			$criteria->compare('event', '_trackPageView');
+			$response[$id] = Events::model()->count($criteria);
+		}
+
+		return $response;
 	}
 
 	/**
