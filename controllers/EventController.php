@@ -80,7 +80,22 @@ class EventController extends ApiController
 	{
 		$event = new Events;
 		$attributes = Yii::app()->request->getParam('Event', array());
+		if (strpos($attributes['uri'], '/dashboard/') !== false)
+			return true;
+
 		$event->attributes = $attributes;
+
+		// Set failure?
+		if (isset($attributes['content_id']))
+			$event->content_id = $attributes['content_id'];
+		
+		// Try to figure out the correct content_id if one isn't provided
+        if ($event->content_id == NULL)
+        {
+        	$content = Content::model()->findByAttributes(array('slug' => $event->uri));
+        	if ($content !== NULL)
+        		$event->content_id = $content->id;
+        }
 
 		if ($id = Cii::get($attributes, 'content_id', false))
 		{
@@ -90,6 +105,8 @@ class EventController extends ApiController
 		}
 		else
 			$event->content_id = null;
+
+		Cii::debug($event->attributes);
 
 		if ($event->save())
 			return $event->getApiAttributes();
