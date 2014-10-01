@@ -13,7 +13,7 @@ class ContentController extends ApiController
                 'expression' => '$user!=NULL'
             ),
             array('allow',
-                'actions' => array('uploadPost'),
+                'actions' => array('uploadImagePost', 'uploadVideoPost'),
                 'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
             ),
             array('allow',
@@ -193,8 +193,32 @@ class ContentController extends ApiController
         $model->attributes = $_POST;
         $model->author_id = $this->user->id;
 
+        // Return a model instance to work with
         if ($model->save(false))
-            return $model->getApiAttributes(array('password', 'like_count'));
+        {
+            return $model->getAPIAttributes(array(
+                            'category_id', 
+                            'parent_id', 
+                            'author_id'), 
+                        array(
+                            'author' => array(
+                                'password',
+                                'activation_key',
+                                'email',
+                                'about',
+                                'user_role',
+                                'status',
+                                'created',
+                                'updated'
+                            ), 
+                            'category' => array(
+                                'parent_id'
+                            ),
+                            'metadata' => array(
+                                'content_id'
+                            )
+                        ));
+        }
 
         return $this->returnError(400, NULL, $model->getErrors());
     }
@@ -240,9 +264,44 @@ class ContentController extends ApiController
         return $model;
     }
 
-    public function actionUploadPost($id, $promote = 0)
+    /**
+     * Uploads a video to the site.
+     * @param integer $id           The content_id
+     * @param integer $promote      Whether or not this image should be a promoted image or not
+     * @return array
+     */
+    public function actionUploadImagePost($id=NULL, $promote = 0)
     {
         $result = new CiiFileUpload($id, $promote);
         return $result->uploadFile();
+    }
+
+    /**
+     *
+     *
+     * @return boolean
+     */
+    public function actionUploadVideoPost($id=NULL)
+    {
+        // Verify the content entry exists
+        $model = $this->loadModel($id);
+        $video = Cii::get($_POST, 'video', NULL);
+
+        if ($video == NULL || strpos($video, 'youtube') === false || strpos($video, 'vimeo') === false || strpos($video, 'vine') === false)
+            throw new CHttpException(400, Yii::t('Api.content', 'Invalid video URL'));
+
+        $meta = ContentMetadata::model()->findByAttributes(array('content-id' => $id, 'key' => 'blog-image'));
+        if ($meta == NULL)
+        {
+            $meta = new ContentMetadata;
+            $meta->attributes = array(
+                'content_id' => $id,
+                'key' => 'blog-image'
+            );
+        }
+
+        $meta->value = $video;
+
+        return $meta->save();
     }
 }
