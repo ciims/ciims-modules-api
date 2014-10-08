@@ -13,7 +13,7 @@ class ContentController extends ApiController
                 'expression' => '$user!=NULL'
             ),
             array('allow',
-                'actions' => array('uploadImagePost', 'uploadVideoPost'),
+                'actions' => array('uploadImagePost', 'autosavePost', 'autosave'),
                 'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
             ),
             array('allow',
@@ -28,7 +28,8 @@ class ContentController extends ApiController
      * [GET] [/content]
      * Retrieves an article by the requested id, or retrieves all articles based upon permissions
      *
-     * NOTE: This endpoint behaves differently for authenticated and unauthenticated users. Authenticated users are show posts they can mutate, whereas
+     * NOTE: This endpoint behaves differently for authenticated and unauthenticated users. Authenticated users are show posts they can mutate, 
+     * whereas unauthenticated users will see every published item
      *
      * @param int $id   The Content id
      */
@@ -181,6 +182,59 @@ class ContentController extends ApiController
     }
 
     /**
+     * [GET] [/content/autosave/<id>]
+     * Fetches the autosave data for a given model
+     * @param  integer $id  The content ID to autosave
+     * @return mixed
+     */
+    public function actionAutosave($id=NULL)
+    {
+        $model = $this->loadModel($id);
+
+        if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
+            throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
+
+        $autosaveModel = ContentMetadata::model()->findByAttributes(array('content_id' => $model->id, 'key' => 'autosave'));
+        if ($autosaveModel == NULL)
+            return false;
+
+        return CJSON::decode($autosaveModel->value);
+    }
+
+    /**
+     * [POST] [/content/autosave/<id>]
+     * Autosave action.
+     * This method is used to prevent Content::$vid incriments unecessarily, and makes the history log more tolerable
+     * @param  integer $id  The content ID to autosave
+     * @return boolean
+     */
+    public function actionAutosavePost($id=NULL)
+    {
+        $model = $this->loadModel($id);
+
+        if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
+            throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
+
+        $model->attributes = $_POST;
+
+        if ($this->user->role->isA('author') || $this->user->role->isA('collaborator'))
+            $model->author_id = $this->user->id;
+
+        $autosaveModel = ContentMetadata::model()->findByAttributes(array('content_id' => $model->id, 'key' => 'autosave'));
+        if ($autosaveModel == NULL)
+        {
+            $autosaveModel = new ContentMetadata;
+            $autosaveModel->attributes = array(
+                'content_id' => $model->id,
+                'key'        => 'autosave'
+            );
+        }
+
+        $autosaveModel->value = CJSON::encode($model->attributes);
+        return $autosaveModel->save();
+    }
+
+    /**
      * Creates a new entry
      */
     private function createNewPost()
@@ -189,12 +243,11 @@ class ContentController extends ApiController
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
         $model = new Content;
-        $model->savePrototype();
+        
         $model->attributes = $_POST;
-        $model->author_id = $this->user->id;
 
         // Return a model instance to work with
-        if ($model->save(false))
+        if ($model->savePrototype($this->user->id))
         {
             return $model->getAPIAttributes(array(
                             'category_id', 
@@ -242,7 +295,7 @@ class ContentController extends ApiController
         $model->vid = $vid++;
 
         if ($model->save())
-            return $model->getApiAttributes(array('password', 'like_count'));
+            return $model->getApiAttributes();         
 
         return $this->returnError(400, NULL, $model->getErrors());
     }
@@ -274,34 +327,5 @@ class ContentController extends ApiController
     {
         $result = new CiiFileUpload($id, $promote);
         return $result->uploadFile();
-    }
-
-    /**
-     *
-     *
-     * @return boolean
-     */
-    public function actionUploadVideoPost($id=NULL)
-    {
-        // Verify the content entry exists
-        $model = $this->loadModel($id);
-        $video = Cii::get($_POST, 'video', NULL);
-
-        if ($video == NULL || strpos($video, 'youtube') === false || strpos($video, 'vimeo') === false || strpos($video, 'vine') === false)
-            throw new CHttpException(400, Yii::t('Api.content', 'Invalid video URL'));
-
-        $meta = ContentMetadata::model()->findByAttributes(array('content-id' => $id, 'key' => 'blog-image'));
-        if ($meta == NULL)
-        {
-            $meta = new ContentMetadata;
-            $meta->attributes = array(
-                'content_id' => $id,
-                'key' => 'blog-image'
-            );
-        }
-
-        $meta->value = $video;
-
-        return $meta->save();
     }
 }
