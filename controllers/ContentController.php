@@ -13,7 +13,7 @@ class ContentController extends ApiController
                 'expression' => '$user!=NULL'
             ),
             array('allow',
-                'actions' => array('uploadImagePost', 'autosavePost', 'autosave'),
+                'actions' => array('uploadImagePost', 'autosavePost', 'autosave', 'revisions'),
                 'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
             ),
             array('allow',
@@ -54,7 +54,7 @@ class ContentController extends ApiController
 
         // Normaly users can only see published entries
         $role = Cii::get($this->user, 'role', NULL);
-        $hiddenFields = array('category_id', 'parent_id', 'author_id');
+        $hiddenFields = array('category_id', 'author_id');
 
         if ($this->user == NULL || UserRoles::model()->isA('user', $this->user->role->id))
         {
@@ -109,6 +109,46 @@ class ContentController extends ApiController
         }
 
         return $response;
+    }
+
+    /**
+     * [GET] [/content/revisions/<id>]
+     * Shows all the revisions for a given entry
+     * @param int $id   The Content id
+     */
+    public function actionRevisions($id=NULL)
+    {
+        if ($id == NULL)
+            throw new CHttpException(400, Yii::t('Api.content', 'Missing ID'));
+
+        $data = Content::model()->findRevisions($id);
+        $response = array();
+        foreach ($data as $model)
+        {
+            $response[] = $model->getAPIAttributes(array(), 
+                            array(
+                                'author' => array(
+                                    'password',
+                                    'activation_key',
+                                    'about',
+                                    'user_role',
+                                    'status',
+                                    'created',
+                                    'updated'
+                                ), 
+                                'category' => array(
+                                    'parent_id'
+                                ),
+                                'metadata' => array(
+                                    'content_id'
+                                )
+                            ));
+        }
+
+        return array(
+            'count' => count($response),
+            'data' => $response
+        );
     }
 
     /**
@@ -172,10 +212,11 @@ class ContentController extends ApiController
     public function actionTagDelete($id=NULL, $tag=NULL)
     {
         $model = $this->loadModel($id);
+
         if (!($this->user->id == $model->author->id || $this->user->role->hasPermission('modify')))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to modify tags.'));
 
-        if ($model->removeTag(Cii::get($_POST, 'tag')))
+        if ($model->removeTag($tag))
             return $model->getTags();
 
         return $this->returnError(400, NULL, $model->getErrors());
@@ -215,23 +256,18 @@ class ContentController extends ApiController
         if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
-        $model->attributes = $_POST;
+        $model->populate($_POST);
 
         if ($this->user->role->isA('author') || $this->user->role->isA('collaborator'))
             $model->author_id = $this->user->id;
 
-        $autosaveModel = ContentMetadata::model()->findByAttributes(array('content_id' => $model->id, 'key' => 'autosave'));
-        if ($autosaveModel == NULL)
-        {
-            $autosaveModel = new ContentMetadata;
-            $autosaveModel->attributes = array(
-                'content_id' => $model->id,
-                'key'        => 'autosave'
-            );
-        }
+        $asModel = $model->getPrototype('ContentMetadata', array('content_id' => $model->id, 'key' => 'autosave'));
 
-        $autosaveModel->value = CJSON::encode($model->attributes);
-        return $autosaveModel->save();
+        $asModel->value = CJSON::encode($model->attributes);
+        if ($asModel->save())
+            return true;
+        else
+            return $this->returnError(400, NULL, $asModel->getErrors());
     }
 
     /**
@@ -244,7 +280,7 @@ class ContentController extends ApiController
 
         $model = new Content;
         
-        $model->attributes = $_POST;
+        $model->populate($_POST);
 
         // Return a model instance to work with
         if ($model->savePrototype($this->user->id))
@@ -291,8 +327,9 @@ class ContentController extends ApiController
             $model->author_id = $this->user->id;
 
         $vid = $model->vid;
-        $model->attributes = $_POST;
-        $model->vid = $vid++;
+        $model = new Content;
+        $model->populate($_POST);
+        $model->vid = Yii::app()->db->createCommand('SELECT MAX(vid)+1 FROM content WHERE id = :id')->bindParam(':id', $id)->queryScalar();
 
         if ($model->save())
             return $model->getApiAttributes();         
