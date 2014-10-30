@@ -18,8 +18,11 @@ class ApiModule extends CWebModule
         $this->layout = false;
 
         // Disable logging for the API
-        foreach (Yii::app()->log->routes as $k=>$v)
-            Yii::app()->log->routes[$k]->enabled = false; 
+        foreach(Yii::app()->log->routes as $k=>$v)
+        {
+            if (get_class($v) == 'CWebLogRoute' || get_class($v) == "CProfileLogRoute")
+                Yii::app()->log->routes[$k]->enabled = false; 
+        }
 
         // Update components
 		Yii::app()->setComponents(array(
