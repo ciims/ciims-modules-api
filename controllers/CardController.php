@@ -1,0 +1,137 @@
+<?php
+
+class CardController extends ApiController
+{
+	public function accessRules()
+    {
+        return array(
+            array('allow',
+                'actions' => array('index', 'indexPost', 'indexDelete', 'rearrangePost', 'installPost', 'details', 'detailsPost'),
+                'expression' => '$user!=NULL'
+            ),
+            array('deny')
+        );
+    }
+
+    /**
+     * Retrieves all the dashboard cards for the current user
+     */
+    public function actionIndex()
+    {
+    	// Fetch all the dashboard cards for the current user
+    	$cards = $this->loadDashboardCards();
+    	$cardData = array();
+
+        // Find all the metadata for those cards and load them
+    	foreach ($cards->value as $id=>$url)
+    	{
+            $metadata = $this->loadCardDetailsModel($id);
+            $cardData[$id] = $metadata->value;
+    	}
+
+    	return array(
+    		'cards'    => $cards->value,
+    		'cardData' => $cardData
+    	);
+    }
+
+    // Installs a new card
+    public function actionIndexPost()
+    {
+    	$cards = $this->loadDashboardCards();
+    	$id = Cii::get($_POST, 'id', false);
+    	$url = Cii::get($_POST, 'url', false);
+
+    	if ($id === false || $url === false)
+    		throw new CHttpException(400, Yii::t('Api.card', 'Invalid card data'));
+
+    	$cards->value[$id] = $url;
+
+    	return $cards->save();
+    }
+
+    /**
+     * Deletes a card from the dashboard
+     * @param  string $id The card ID
+     * @return boolean
+     */
+    public function actionIndexDelete($id=NULL)
+    {
+    	$cards = $this->loadDashboardCards();
+
+    	if (array_key_exists($id, $cards->value))
+    		unset($cards->value[$id]);
+
+    	return $card->save();
+    }
+
+    /**
+     * Retrieves the properties of a given card ID 
+     * @param  string $id The card ID
+     * @return UserMetadata
+     */
+    public function actionDetails($id=NULL)
+    {
+    	$model = $this->loadCardDetailsModel($id);
+    	return $model->value;
+    }
+
+    /**
+     * Updates the card details (properties)
+     * @param  string $id The card ID
+     * @return boolean
+     */
+    public function actionDetailsPost($id=NULL)
+    {
+    	$model = $this->loadCardDetailsModel($id);
+    	$model->value = CJSON::encode(array(
+    		'size' => Cii::get($_POST, 'size', 'square'),
+    		'properties' => Cii::get($_POST, 'properties', array())
+    	));
+
+    	return $model->save();
+    }
+
+    // Card re-arrangemment
+    public function actionRearrangePost()
+    {
+
+    }
+
+    /**
+     * Loads all the dashboard cards, in order for this particular user
+     * @return UserMetadata
+     */
+    private function loadDashboardCards()
+    {
+    	// Fetch all the dashboard cards for the current user
+    	$model = UserMetadata::model()->getPrototype('UserMetadata', array(
+    		'user_id' => $this->user->id,
+    		'key' => 'dashboard_cards'
+    	), array('value' => array()));
+
+    	$model->value = CJSON::decode($model->value);
+
+    	return $model;
+    }
+
+    /**
+     * Returns a UserMetadata Object for a given card, containing the properties and settings for that card.
+     * @param  string $id The card ID
+     * @return UserMetadata
+     */
+    private function loadCardDetailsModel($id=NULL)
+    {
+    	if ($id == NULL)
+    		throw new CHttpException(400, Yii::t('Api.card', 'Missing card ID'));
+
+    	$model = UserMetadata::model()->getPrototype('UserMetadata', array(
+    		'user_id' => $this->user->id,
+    		'key' => $id.'_card_settings'
+    	), array('value' => array()));
+
+    	$model->value = CJSON::decode($model->value);
+
+    	return $model;
+    }
+}
