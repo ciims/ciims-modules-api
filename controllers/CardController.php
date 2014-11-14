@@ -6,7 +6,7 @@ class CardController extends ApiController
     {
         return array(
             array('allow',
-                'actions' => array('index', 'indexPost', 'indexDelete', 'rearrangePost', 'installPost', 'details', 'detailsPost'),
+                'actions' => array('index', 'indexPost', 'indexDelete', 'rearrangePost', 'details', 'detailsPost'),
                 'expression' => '$user!=NULL'
             ),
             array('deny')
@@ -35,19 +35,38 @@ class CardController extends ApiController
     	);
     }
 
-    // Installs a new card
+    /**
+     * Installs a new card to the dashboard cards, and adds the appropriate settings to the database
+     * @return boolean
+     */
     public function actionIndexPost()
     {
     	$cards = $this->loadDashboardCards();
     	$id = Cii::get($_POST, 'id', false);
     	$url = Cii::get($_POST, 'url', false);
+        $data = Cii::get($_POST, 'details', false);
 
-    	if ($id === false || $url === false)
+    	if ($id === false || $url === false || $data == false)
     		throw new CHttpException(400, Yii::t('Api.card', 'Invalid card data'));
 
     	$cards->value[$id] = $url;
 
-    	return $cards->save();
+        $newCard = $this->loadCardDetailsModel($id);
+        $newcard->value = CJSON::encode($data);
+
+
+        // If we saved the card metadata
+        if ($newCard->save())
+        {
+            // Try to save the card to the dashboard
+            if ($cards->save())
+                return true;
+
+            // If that fails, delete the new card data, and throw the 400 error below
+            $newCard->delete();
+        }
+
+        throw new CHttpException(500, Yii::t('Api.card', 'Card could not be saved.'));
     }
 
     /**
