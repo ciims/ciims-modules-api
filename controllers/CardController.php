@@ -92,10 +92,30 @@ class CardController extends ApiController
     	return $model->save();
     }
 
-    // Card re-arrangemment
+    /**
+     * Rearranges cards according to the data provided by $_POST['cards']
+     * @return boolean
+     */
     public function actionRearrangePost()
     {
+        $cards = $this->loadDashboardCards();
+        $submittedCards = Cii::get($_POST, 'cards', array());
 
+        // Prevent an empty submission from wiping all the dashboard cards and doing an out of band uninstall
+        if (empty($submittedCards))
+            throw new CHttpException(400, Yii::t('Api.card', 'No cards were provided for re-arrangement'));
+
+        // Prevent installations from occuring on this endpoint
+        foreach ($submittedCards as $id=>$url)
+        {
+            // If the card doesn't exist in the existing card list, remove it from the submitted data
+            if (!isset($cards->value[$id]))
+                unset($submittedCards[$id]);
+        }
+
+        // Save the new card data
+        $cards->value = CJSON::encode($submittedCards);
+        return $cards->save();
     }
 
     /**
@@ -128,7 +148,7 @@ class CardController extends ApiController
     	$model = UserMetadata::model()->getPrototype('UserMetadata', array(
     		'user_id' => $this->user->id,
     		'key' => $id.'_card_settings'
-    	), array('value' => array()));
+    	), array('value' => '{}'));
 
     	$model->value = CJSON::decode($model->value);
 
