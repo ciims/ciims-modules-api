@@ -49,11 +49,12 @@ class CardController extends ApiController
     	if ($id === false || $url === false || $data == false)
     		throw new CHttpException(400, Yii::t('Api.card', 'Invalid card data'));
 
-    	$cards->value[$id] = $url;
+        $values = $cards->value;
+        $values[$id] = $url;
+    	$cards->value = CJSON::encode($values);
 
         $newCard = $this->loadCardDetailsModel($id);
-        $newcard->value = CJSON::encode($data);
-
+        $newCard->value = CJSON::encode($data);
 
         // If we saved the card metadata
         if ($newCard->save())
