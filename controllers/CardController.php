@@ -78,11 +78,18 @@ class CardController extends ApiController
     public function actionIndexDelete($id=NULL)
     {
     	$cards = $this->loadDashboardCards();
+        $value = $cards->value;
+    	if (array_key_exists($id, $value))
+    		unset($value[$id]);
 
-    	if (array_key_exists($id, $cards->value))
-    		unset($cards->value[$id]);
-
-    	return $card->save();
+        $cards->value = CJSON::encode($value);
+    	if ($cards->save())
+        {
+            $newCard = $this->loadCardDetailsModel($id);
+            if ($newCard->delete())
+                return true;
+        }
+        throw new CHttpException(500, Yii::t('Api.card', 'Card could not be saved.'));
     }
 
     /**
