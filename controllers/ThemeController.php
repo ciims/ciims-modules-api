@@ -175,10 +175,9 @@ class ThemeController extends ApiController
         // Download the ZIP package to the runtime/themes temporary directory
         $this->downloadPackage($details['sha'], $details['file'], Yii::getPathOfAlias('application.runtime.themes'));
         $zip = new ZipArchive;
-        $response = $zip->open($zipPath, ZipArchive::CREATE);
 
         // If we can open the file
-        if ($response  === true)
+        if ($zip->open($zipPath) === true)
         {
             // And we were able to extract it
             if ($zip->extractTo($themesPath.DS.$details['sha']))
@@ -390,8 +389,7 @@ class ThemeController extends ApiController
             CURLOPT_FILE => $fp,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_URL => $file,
-            CURLOPT_BINARYTRANSFER => true,
-            CURLOPT_CAINFO => Yii::getPathOfAlias('application.config.certs') . DIRECTORY_SEPARATOR . 'BaltimoreCyberTrustRootCA.crt'
+            CURLOPT_BINARYTRANSFER => true
         ));
 
         curl_exec($curl);
