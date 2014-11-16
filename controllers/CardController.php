@@ -148,7 +148,7 @@ class CardController extends ApiController
     	$model = UserMetadata::model()->getPrototype('UserMetadata', array(
     		'user_id' => $this->user->id,
     		'key' => 'dashboard_cards'
-    	), array('value' => array()));
+    	), array('value' => '{}'));
 
     	$model->value = CJSON::decode($model->value);
 
