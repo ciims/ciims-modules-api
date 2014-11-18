@@ -11,7 +11,7 @@ class ThemeController extends ApiController
     {   
         return array(
             array('allow',
-                'actions' => array('callback')
+                'actions' => array('callback', 'callbackPost')
             ),
              array('allow',
                 'actions' => array('installed', 'install', 'changetheme', 'update', 'updateCheck', 'uninstall', 'list', 'isinstalled', 'details'),
@@ -145,7 +145,7 @@ class ThemeController extends ApiController
      */
     public function actionInstall($name=false)
     {
-        if ($name == false)
+        if ($name == false || defined('CII_CONFIG'))
             return false;
         
         $filePath = Yii::getPathOfAlias('webroot.themes').DS.$name;
@@ -252,27 +252,36 @@ class ThemeController extends ApiController
      */
     public function actionList()
     {
-        $themes = Yii::app()->cache->get('packagist_themes');
-        if ($themes === false)
-        {
-            $packagist = new Packagist\Api\Client();
+        // Don't allow theme listing in CII_CONFIG
+        if (defined('CII_CONFIG'))
+            return false;
 
-            foreach ($packagist->search('ciims-themes') as $result)
-            {
-                if (strpos($result->getName(), 'ciims-themes') !== false)
-                {
-                    $themes[] = array(
-                        'name' => $result->getName(),
-                        'description' => $result->getDescription(),
-                        'url' => $result->getUrl(),
-                        'downloads' => $result->getDownloads()
-                    );
-                }
-            }
-            Yii::app()->cache->set('packagist_themes', $themes, 900);
+        // Use Github RAW for now
+        // TODO: This should be a CDN URL instead of Github
+        $url = 'https://raw.githubusercontent.com/ciims/themes/master/index.json';
+
+        $result = Yii::app()->cache->get('CiiMS::Themes::Available');
+        if ($result === false)
+        {
+            $ch = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_URL            => $url,
+            ));
+
+            $data = curl_exec($ch);
+
+            if (curl_error($ch))
+                throw new CHttpException(500, Yii::t('Api.theme', 'Unable to download list of approved themes'));
+
+            curl_close($ch);
+
+            $result = CJSON::decode($data);
+            Yii::app()->cache->set('CiiMS::Themes::Available', $result, 900);
         }
 
-        return $themes;
+        return $result;
     }
 
     /**
@@ -285,7 +294,7 @@ class ThemeController extends ApiController
         if ($name == false)
             throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
 
-        $result = Yii::app()->cache->get('packagist_ciims-themes/'.$name);
+        $result = Yii::app()->cache->get('CiiMS::Packagist::Themes/'.$name);
         if ($result === false)
         {
             $array = array();
@@ -338,20 +347,47 @@ class ThemeController extends ApiController
                 )
             );
             
-            Yii::app()->cache->set('packagist_ciims-themes/'.$name, $result, 900);
+            Yii::app()->cache->set('CiiMS::Packagist::Themes/'.$name, $result, 900);
         }
 
         return $result;
     }
 
     /**
-     * Allows themes to have their own dedicated callback resources.
+     * Allows themes to have their own dedicated callback resources for $_GET
      *
      * This enables theme developers to not have to hack CiiMS Core in order to accomplish stuff
      * @param  string $method The method of the current theme they want to call
+     * @param string $theme   The theme name
      * @return The output or action of the callback
      */
     public function actionCallback($theme=NULL, $method=NULL)
+    {
+        $this->callback($theme, $method, $_GET);
+    }
+
+    /**
+     * Allows themes to have their own dedicated callback resources for POST
+     *
+     * This enables theme developers to not have to hack CiiMS Core in order to accomplish stuff
+     * @param  string $method The method of the current theme they want to call
+     * @param string $theme   The theme name
+     * @return The output or action of the callback
+     */
+    public function actionCallbackPost($theme=NULL, $method=NULL)
+    {
+        $this->callback($theme, $method, $_POST);
+    }
+
+    /**
+     * Callback method for actionCallback and actionCallbackPost
+     *
+     * @param  string $method The method of the current theme they want to call
+     * @param string $theme   The theme name
+     * @param array $data $_GET or $_POST
+     * @return mixed
+     */
+    private function callback($theme, $method, $data)
     {
         if ($theme == NULL)
             throw new CHttpException(400, Yii::t('Api.Theme', 'Missing Theme'));
@@ -363,7 +399,7 @@ class ThemeController extends ApiController
         $theme = new Theme;
 
         if (method_exists($theme, $method))
-            return $theme->$method($_POST);
+            return $theme->$method($data);
 
         throw new CHttpException(404, Yii::t('Api.Theme', 'Missing callback method.'));
     }
@@ -383,7 +419,7 @@ class ThemeController extends ApiController
         ignore_user_abort(true);
         set_time_limit(0);
 
-        $fp = fopen($path . DIRECTORY_SEPARATOR . $id . '.zip', 'w+');
+        $fp = fopen($path . DS . $id . '.zip', 'w+');
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_FILE => $fp,
