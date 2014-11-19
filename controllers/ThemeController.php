@@ -264,7 +264,7 @@ class ThemeController extends ApiController
         if ($result === false)
         {
             $ch = curl_init();
-            curl_setopt_array($curl, array(
+            curl_setopt_array($ch, array(
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_URL            => $url,
