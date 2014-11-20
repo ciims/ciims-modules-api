@@ -74,7 +74,7 @@ class ThemeController extends ApiController
         if ($return)
             return false;
 
-        throw new CHttpException(404, Yii::t('Api.Theme', 'Theme is not installed'));
+        return $this->returnError(200, Yii::t('Api.main', 'Theme is not installed'), false);
     }
 
     /**
