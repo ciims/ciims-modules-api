@@ -35,10 +35,6 @@ class CategoryController extends ApiController
 
             return $category->getAPIAttributes();
         }
-
-        // Prevent non management users from doing a blanket queryall
-        if (!$this->user->role->hasPermission("manage"))
-            throw new CHttpException(401, Yii::t('Api.category', 'Do you not have sufficient permissions to view this data'));
         
         $model = new Categories('search');
         $model->unsetAttributes();  // clear any default values

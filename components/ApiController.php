@@ -239,4 +239,15 @@ class ApiController extends CiiController
         
         return $response;
     }
+
+    protected function getRole($role)
+    {
+        if (!isset($this->user))
+            return false;
+
+        if (isset($this->user->role))
+            return $this->user->role->hasPermission($role);
+
+        return false;
+    }
 }
