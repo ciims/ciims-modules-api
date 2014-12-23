@@ -186,10 +186,6 @@ class UserController extends ApiController
 
             $model->attributes = $_POST;
 
-            // TODO: ??? Why does this field not automatically populate ???
-            if (Cii::get($_POST, 'about', false))
-            	$model->about = Cii::get($_POST, 'about', false);
-
 			if ($model->save())
 		    	return Users::model()->findByAttributes(array('email' => $model->email))->getAPIAttributes(array('password'), array('role', 'metadata'));
 		    else

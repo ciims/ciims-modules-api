@@ -54,8 +54,8 @@ class EventController extends ApiController
 		$ids = Yii::app()->request->getParam('ids', array());
 
 		// Default count range between the current time and the last 24 hours
-		$start = Yii::app()->request->getParam('start', date('y-m-d H:i:s'));
-		$end = Yii::app()->request->getParam('end', date('y-m-d H:i:s', (time()-(24*60*60))));
+		$start = Yii::app()->request->getParam('start', time());
+		$end = Yii::app()->request->getParam('end', time()-(24*60*60));
 
 		$response = array();
 
@@ -105,8 +105,6 @@ class EventController extends ApiController
 		}
 		else
 			$event->content_id = null;
-
-		Cii::debug($event->attributes);
 
 		if ($event->save())
 			return $event->getApiAttributes();
