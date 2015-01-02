@@ -9,7 +9,7 @@ class ContentController extends ApiController
                 'actions' => array('index', 'tag')
             ),
             array('allow',
-                'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete'),
+                'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete', 'like'),
                 'expression' => '$user!=NULL'
             ),
             array('allow',
@@ -112,6 +112,56 @@ class ContentController extends ApiController
     }
 
     /**
+     * [GET] [/content/like/<id>]
+     * @param int $id   The Content id
+     * @return [type]     [description]
+     */
+    public function actionLike($id=NULL)
+    {
+        if ($id == NULL)
+            throw new CHttpException(400, Yii::t('Api.content', 'Missing ID'));
+
+        $model = new ContentMetadata;
+        $content = $model->getPrototype('ContentMetadata', array('content_id' => $id, 'key' => 'likes'), array('value' => 0));
+
+        if ($id === NULL || $content === NULL)
+             throw new CHttpException(404, Yii::t('Api.content', 'No content entry with that ID was'));
+        
+        // Load the user likes, create one if it does not exist
+        $user = $model->getPrototype('UserMetadata', array('user_id' => $this->user->id, 'key' => 'likes'), array('value' => '[]'));
+
+        $likes = json_decode($user->value, true);
+
+        $type = "inc";
+        if (in_array($id, array_values($likes)))
+        {
+            $type = "dec";
+            $content->value -= 1;
+            if ($content->value <= 0)
+                $content->value = 0;
+            $element = array_search($id, $likes);
+            unset($likes[$element]);
+        }
+        else
+        {
+            $content->value += 1;
+            array_push($likes, $id);
+        }
+        
+        $user->value = CJSON::encode($likes);
+
+        if (!$user->save())
+            throw new CHttpException(500, Yii::t('Api.content', 'Unable to save user like'));
+
+        if (!$content->save())
+            throw new CHttpException(500, Yii::t('Api.content', 'Unable to save like'));
+
+        return array( 
+            'type' => $type
+        );
+    }
+
+    /**
      * [GET] [/content/revisions/<id>]
      * Shows all the revisions for a given entry
      * @param int $id   The Content id
@@ -202,7 +252,6 @@ class ContentController extends ApiController
             return $model->getTags();
 
         return $this->returnError(400, NULL, $model->getErrors());
-
     }
 
     /**
