@@ -133,6 +133,10 @@ class ApiController extends CiiController
      */
     public function beforeAction($action)
     {
+    	try {
+            @Yii::app()->newRelic->setTransactionName($this->id, $action->id);
+        } catch (Exception $e) {}
+        
         // Force SSL for secure areas if enabled from the dashboard
         if (!Yii::app()->getRequest()->isSecureConnection && Cii::getConfig('forceSecureSSL', false))
             $this->redirect('https://' . Yii::app()->getRequest()->serverName . Yii::app()->getRequest()->requestUri);
