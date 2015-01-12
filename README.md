@@ -2,6 +2,7 @@
 [![Latest Version](http://img.shields.io/packagist/v/ciims-modules/api.svg?style=flat)]()
 [![Downloads](http://img.shields.io/packagist/dt/ciims-modules/api.svg?style=flat)]()
 [![Gittip](http://img.shields.io/gittip/charlesportwoodii.svg?style=flat "Gittip")](https://www.gittip.com/charlesportwoodii/)
+[![License](http://img.shields.io/badge/license-MIT-orange.svg?style=flat "License")](https://github.com/charlesportwoodii/ciims-modules-api/blob/master/LICENSE.md)
 
 The CiiMS API module provides basic access to common methods and data. The CiiMS API is a JSON REST API which supports GET, POST, and DELETE. POSTS requests should be sent as JSON encoded form fields for simplicity.
 
