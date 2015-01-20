@@ -3,15 +3,21 @@
 class ApiInlineAction extends CInlineAction
 {
     /**
+     * This method was modified ~1.1.16, and has been changed to return a response rather than false
+     * @inheritdoc
+     */
+    public function runWithParams($params)
+    {
+        $methodName='action'.$this->getId();
+        $controller=$this->getController();
+        $method=new ReflectionMethod($controller, $methodName);
+        return $this->runWithParamsInternal($controller, $method, $params);
+    }
+
+    /**
      * This method has been overloaded so that it returns a response rather than a boolean value
      *
-     * Executes a method of an object with the supplied named parameters.
-     * This method is internally used.
-     * @param mixed $object the object whose method is to be executed
-     * @param ReflectionMethod $method the method reflection
-     * @param array $params the named parameters
-     * @return boolean whether the named parameters are valid
-     * @since 1.1.7
+     * @inheritdoc
      */
     protected function runWithParamsInternal($object, $method, $params)
     {
