@@ -33,7 +33,7 @@ class CategoryController extends ApiController
             if ($category == NULL)
                 throw new CHttpException(404, Yii::t('Api.category', 'A category with the id of {{id}} was not found.', array('{{id}}' => $id)));
 
-            return $category->getAPIAttributes();
+            return $category->getAPIAttributes(array('parent_id'), array('parent', 'metadata'));
         }
         
         $model = new Categories('search');
@@ -54,7 +54,7 @@ class CategoryController extends ApiController
         $response = array();
 
         foreach ($dataProvider->getData() as $category)
-            $response[] = $category->getAPIAttributes(array(), array('parent'));
+            $response[] = $category->getAPIAttributes(array('parent_id'), array('parent', 'metadata'));
 
         return $response;
     }
@@ -80,7 +80,7 @@ class CategoryController extends ApiController
         $category->attributes = $_POST;
         
         if ($category->save())
-            return $category->getAPIAttributes(array(), array('parent'));
+            return $category->getAPIAttributes(array('parent_id'), array('parent', 'metadata'));
 
         return $this->returnError(400, NULL, $category->getErrors());         
     }

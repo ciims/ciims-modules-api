@@ -51,7 +51,7 @@ class UserController extends ApiController
     			return UserMetadata::model()->findByAttributes(array('user_id' => Users::model()->findByAttributes(array('email' => $_POST['email']))->id, 'key' => 'api_key' . $_POST['name']))->value;
     	}
 
-    	throw new CHttpException(403, Yii::t('Api.user', 'Unable to authenticate.'));
+    	return $this->returnError(403, Yii::t('Api.user', 'Unable to authenticate.'), null);
     }
 
     /**

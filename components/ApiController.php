@@ -173,7 +173,14 @@ class ApiController extends CiiController
 	    $this->_action=$action;
 	    if($this->beforeAction($action))
 	    {
-	    	$response = $action->runWithParams($this->getActionParams());
+            try {
+    	    	$response = $action->runWithParams($this->getActionParams());
+            } catch (CHttpException $e) {
+                $response = null;
+                $this->status = $e->statusCode;
+                $this->message = $e->getMessage();
+            }
+
 	        if($response===false)
 	            $this->invalidActionParams($action);
 	        else

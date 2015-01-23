@@ -10,7 +10,7 @@ class DefaultController extends ApiController
         	),
             array('allow',
                 'actions' => array('JsonProxyPost'),
-                'expression' => '$user!=NULL'
+                'expression' => '$user!=NULL&&$user->role->id>=5'
             ),
             array('deny')
         );

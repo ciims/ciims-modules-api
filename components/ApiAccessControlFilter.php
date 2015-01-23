@@ -51,7 +51,7 @@ class ApiAccessControlFilter extends CAccessControlFilter
         {
             if(is_array($rule) && isset($rule[0]))
             {
-                $r=new ApiAccessRule;
+                $r=new CAccessRule;
                 $r->allow=$rule[0]==='allow';
                 foreach(array_slice($rule,1) as $name=>$value)
                 {
@@ -75,29 +75,5 @@ class ApiAccessControlFilter extends CAccessControlFilter
     {  
         http_response_code(403);
         Yii::app()->controller->renderOutput(array(), 403, $message);
-    }
-}
-
-class ApiAccessRule extends CAccessRule
-{
-    /**
-     * Checks whether the Web user is allowed to perform the specified action.
-     * @param CWebUser $user the user object
-     * @param CController $controller the controller currently being executed
-     * @param CAction $action the action to be performed
-     * @param string $ip the request IP address
-     * @param string $verb the request verb (GET, POST, etc.)
-     * @return integer 1 if the user is allowed, -1 if the user is denied, 0 if the rule does not apply to the user
-     */
-    public function isUserAllowed($user,$controller,$action,$ip,$verb)
-    {
-        if($this->isActionMatched($action)
-            && $this->isIpMatched($ip)
-            && $this->isVerbMatched($verb)
-            && $this->isControllerMatched($controller)
-            && $this->isExpressionMatched($user))
-            return $this->allow ? 1 : -1;
-        else
-            return 0;
     }
 }
