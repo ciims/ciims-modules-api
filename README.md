@@ -1,24 +1,8 @@
 # CiiMS API
-
-
-
 [![Latest Version](http://img.shields.io/packagist/v/ciims-modules/api.svg?style=flat)]()
-
-
-
 [![Downloads](http://img.shields.io/packagist/dt/ciims-modules/api.svg?style=flat)]()
-
-
-
 [![Gittip](http://img.shields.io/gittip/charlesportwoodii.svg?style=flat "Gittip")](https://www.gittip.com/charlesportwoodii/)
-
-
-
 [![License](http://img.shields.io/badge/license-MIT-orange.svg?style=flat "License")](https://github.com/charlesportwoodii/ciims-modules-api/blob/master/LICENSE.md)
-
-
-
-
 
 
 
@@ -26,13 +10,7 @@ The CiiMS API module provides basic access to common methods and data. The CiiMS
 
 
 
-
-
-
-
 ## API Overview
-
-
 
 This documentation provides a comprehensive overview of everything that the CiiMS API has to offer. This documentation offers a full explaination of each API endpoint, as well as example request and responses.
 
@@ -46,99 +24,52 @@ __[HTTP_VERB] [/uri/path] [params] Method Description__
 
 
 
-
-
-
-
 ## License
-
-
 
 See LICENSE.md
 
 
-
-
-
-
-
 ### API Objectives
-
-
 
 The API has been designed with serveral components in mind:
 
 
 
-
-
-
-
 - Performance
 
-
-
 - Security
-
-
 
 - Simplicity
 
 
-
-
-
-
-
 ### Accessing the API
-
-
 
 The CiiMS API can be accessed via the ```/api``` endpoint of your CiiMS instance.
 
 
 
-
-
-
-
 ### Appropriate Request Headers
-
-
 
 When making a request to the API you have 2 options for interaction, you can either send raw JSON via ```application/json``` as a raw request __OR__ you can send ```application/x-www-form-urlencoded``` form data and serialize your parameters as you would in jQuery. If any raw request body is recieved the API will assume that the data you sent is ```application/json``` and will interpret the data as that.
 
 
 
-
-
-
-
 ### Responses
-
-
 
 All responses from the API will be returned as JSON objects and will at minimum contain the HTTP response code sent with the headers, a error message if applicable, and an object called "response" which will contain the response. If an occur occurs, (depending on the resource), the response will be an empty JSON object or NULL.
 
 
-
-
-
-
-
-    { "status" : <http_status_code>, "message" : null, "response" : { } }
-
-
-
-
+```
+{
+    "status" : <http_status_code>, 
+    "message" : null, 
+    "response" : { } 
+}
+```
 
 
 
 ------
-
-
-
-
 
 
 
@@ -149,8 +80,6 @@ While some API endpoints are made publicly available, most require authenticatio
 
 
 ## [POST] [/user/token] Authenticating
-
-
 
 When you authenticate against the CiiMS API, you'll be presented with a long-life token that you can use for future requests. This long-life token should be kept in a secure location, as it grants whoever controls it full access to any available resource that the token owner has access to.
 
@@ -165,15 +94,10 @@ __Example Request:__
 
 
 ```
-
 {
-
     "email": "email@example.tld",
-
     "password": "<password>",
-
-    "name": "<yourApplicationName>""
-
+    "name": "<yourApplicationName>"
 }
 
 ```
@@ -191,15 +115,10 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
     "response": "<long-life-token>"
-
 }
 
 ```
@@ -211,15 +130,10 @@ In the event that authentication fails, you'll be presented with a generic 403 e
 
 
 ```
-
 {
-
     "status": 403,
-
     "message": "Unable to authenticate.",
-
     "response": false
-
 }
 
 ```
@@ -231,10 +145,8 @@ Once authenticated, any request that requires authentication can be accessed by 
 
 
 ```
-
-X-Auth-Email: user@example.tld
-
-X-Auth-Token: <long-life-token>
+    X-Auth-Email: user@example.tld
+    X-Auth-Token: <long-life-token>
 
 ```
 
@@ -253,15 +165,10 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
     "response": true
-
 }
 
 ```
@@ -281,6 +188,8 @@ __Example Response:__
 The following API endpoints are made available for testing. This next section will divide the API endpoints by controller/namespace.
 
 
+------
+
 
 ## Card
 
@@ -299,29 +208,17 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
     "response": {
-
         "cards": {
-
             "<id>": "<url>"
-
         },
-
         "cardData": {
-
-            "<id>": <json_card_params_object>
-
+            "<id>": {}
         }
-
     }
-
 }
 
 ```
@@ -339,15 +236,10 @@ __Example Request:__
 
 
 ```
-
 {
-
-    "id": <generated_uuid>,
-
-    "url": <card_endppint_url_fqdn>,
-
-    "details": <json_object>
-
+    "id": "<generated_uuid>",
+    "url": "<card_endppint_url_fqdn>",
+    "details": {}
 }
 
 ```
@@ -371,15 +263,10 @@ __Example Request:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
-    "response": <json_params>
-
+    "response": {}
 }
 
 ```
@@ -396,6 +283,8 @@ Card details can be modified by sending a POST request to this endpoint. This en
 
 This endpoint allows the dashboard cards to be re-arranged.
 
+
+------
 
 
 ## Category
@@ -419,75 +308,43 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
-    "response": [{
-
-        "id": "12",
-
-        "name": "Name",
-
-        "slug": "name",
-
-        "created": "1380326400",
-
-        "updated": "1386460800",
-
-        "parent": {
-
-            "id": "1",
-
-            "parent_id": "1",
-
-            "name": "Uncategorized",
-
-            "slug": "uncategorized",
-
-            "created": "1417471909",
-
-            "updated": "1417471909"
-
+    "response": [
+        {
+            "id": "12",
+            "name": "Name",
+            "slug": "name",
+            "created": "1380326400",
+            "updated": "1386460800",
+            "parent": {
+                "id": "1",
+                "parent_id": "1",
+                "name": "Uncategorized",
+                "slug": "uncategorized",
+                "created": "1417471909",
+                "updated": "1417471909"
+            },
+            "metadata": []
         },
-
-        "metadata": []
-
-    }, {
-
-        "id": "10",
-
-        "name": "example2",
-
-        "slug": "example2",
-
-        "created": "1371772800",
-
-        "updated": "1371772800",
-
-        "parent": {
-
-            "id": "1",
-
-            "parent_id": "1",
-
-            "name": "Uncategorized",
-
-            "slug": "uncategorized",
-
-            "created": "1417471909",
-
-            "updated": "1417471909"
-
-        },
-
-        "metadata": []
-
-    }]
-
+        {
+            "id": "10",
+            "name": "example2",
+            "slug": "example2",
+            "created": "1371772800",
+            "updated": "1371772800",
+            "parent": {
+                "id": "1",
+                "parent_id": "1",
+                "name": "Uncategorized",
+                "slug": "uncategorized",
+                "created": "1417471909",
+                "updated": "1417471909"
+            },
+            "metadata": []
+        }
+    ]
 }
 
 ```
@@ -505,15 +362,10 @@ __Example Request:__
 
 
 ```
-
 {
-
     "name": "name",
-
     "slug": "<uri_slug>",
-
-    "parent_id": <id_of_parent_category> // default of 1
-
+    "parent_id": "<id_of_parent_category>"
 }
 
 ```
@@ -525,45 +377,27 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
-    "response": [{
-
-        "id": "12",
-
-        "name": "Name",
-
-        "slug": "name",
-
-        "created": "1380326400",
-
-        "updated": "1386460800",
-
-        "parent": {
-
-            "id": "1",
-
-            "parent_id": "1",
-
-            "name": "Uncategorized",
-
-            "slug": "uncategorized",
-
-            "created": "1417471909",
-
-            "updated": "1417471909"
-
-        },
-
-        "metadata": []
-
-    }]
-
+    "response": [
+        {
+            "id": "12",
+            "name": "Name",
+            "slug": "name",
+            "created": "1380326400",
+            "updated": "1386460800",
+            "parent": {
+                "id": "1",
+                "parent_id": "1",
+                "name": "Uncategorized",
+                "slug": "uncategorized",
+                "created": "1417471909",
+                "updated": "1417471909"
+            },
+            "metadata": []
+        }
+    ]
 }
 
 ```
@@ -584,6 +418,8 @@ __Limitations:__
 
 2. When a category is deleted, all child categories will be reassigned to the deleted categories parent category.
 
+
+------
 
 
 ## Comment
@@ -649,7 +485,6 @@ __Example Response:__
 ### [GET] [/comment/user] [id] Retrieves comments for a given user
 Retrieves comments for a given user
 
-```
 __Example Response:__
 
 ```
@@ -725,15 +560,10 @@ __Example Request:__
 
 ```
 {
-
     "id": <comment_id>,
-
     "content_id": <id>,
-
     "author_id": <user_id>,
-
-    "comment": <comment>,
-
+    "comment": <comment>
 }
 
 ```
@@ -772,9 +602,13 @@ For when you say something you shouldn't in a public setting. = )
 ### [POST] [/comment/flag] [id] Flag a comment
 Flags a comment for review/as contriversial.
 
+------
+
 
 ## Content
 
+
+------
 
 
 ## Default
@@ -794,15 +628,10 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
     "response": true
-
 }
 
 ```
@@ -846,11 +675,8 @@ __Example Request:__
 
 
 ```
-
 {
-
-    "url": <url_of_remote_json_resource>
-
+    "url": "<url_of_remote_json_resource>"
 }
 
 ```
@@ -859,6 +685,8 @@ __Example Request:__
 
 The response of this result will be cached for 10 minutes to prevent abuse, and will dump the result of the cURL request in the response parameter of the response object.
 
+
+------
 
 
 ## Event
@@ -888,17 +716,10 @@ __Example Request:__
 
 
 ```
-
 {
-
-    "event": <your_event_name>,
-
-    "uri": <event_uri>,
-
-    //"content_id": <content_id_of_event>,
-
-    "event_data": <json_data_to_store_with_event>
-
+    "event": "event_name",
+    "uri": "event_uri",
+    "event_data": "extra_json_data"
 }
 
 ```
@@ -916,11 +737,8 @@ __Example Request:__
 
 
 ```
-
 {
-
     "ids": []
-
 }
 
 ```
@@ -932,23 +750,18 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": null,
-
     "response": {
-
-        "<id>": <count>
-
+        "<id>": "<count>"
     }
-
 }
 
 ```
 
+
+------
 
 
 ## Setting
@@ -982,9 +795,7 @@ __Endpoints:__
 
 
 ```
-
 [GET] [/setting/index]
-
 [POST] [/setting/index]
 
 ```
@@ -996,47 +807,26 @@ __JSON Body:__
 
 
 ```
-
 {
-
     "name": "[Site Name]",
-
     "dateFormat": "F jS, Y",
-
     "timeFormat": "H:i",
-
     "defaultLanguage": "en_US",
-
     "forceSecureSSL": "1",
-
     "offline": "0",
-
     "bcrypt_cost": "13",
-
     "searchPaginationSize": "10",
-
     "categoryPaginationSize": "10",
-
     "contentPaginationSize": "10",
-
     "useDisqusComments": "1",
-
     "disqus_shortname": "disqus_shortname",
-
     "useOpenstackCDN": "0",
-
     "useRackspaceCDN": "0",
-
     "openstack_identity": null,
-
     "openstack_username": null,
-
-    "openstack_apikey": ,
-
+    "openstack_apikey": null,
     "openstack_region": null,
-
     "openstack_container": null
-
 }
 
 ```
@@ -1056,9 +846,7 @@ __Endpoints:__
 
 
 ```
-
 [GET] [/setting/analytics]
-
 [POST] [/setting/analytics]
 
 ```
@@ -1070,27 +858,16 @@ __JSON Body:__
 
 
 ```
-
 {
-
     "analyticsjs_Google__Analytics_enabled": 0,
-
     "analyticsjs_Google__Analytics_domain": null,
-
     "analyticsjs_Google__Analytics_trackingId": null,
-
     "analyticsjs_Google__Analytics_universalClient": 1,
-
     "analyticsjs_Pingdom_enabled": false,
-
     "analyticsjs_Pingdom_id": null,
-
     "analyticsjs_Piwik_enabled": 0,
-
     "analyticsjs_Piwik_url": null,
-
-    "analyticsjs_Piwik_siteId":null
-
+    "analyticsjs_Piwik_siteId": null
 }
 
 ```
@@ -1114,9 +891,7 @@ __Endpoints:__
 
 
 ```
-
 [GET] [/setting/email]
-
 [POST] [/setting/email]
 
 ```
@@ -1128,24 +903,15 @@ __JSON Body:__
 
 
 ```
-
 {
     "SMTPHost": null,
-
     "SMTPPort": null,
-
     "SMTPUser": null,
-
     "SMTPPass": null,
-
     "notifyName": null,
-
     "notifyEmail": null,
-
     "useTLS": 0,
-
     "useSSL": 0
-
 }
 
 ```
@@ -1173,9 +939,7 @@ __Endpoints:__
 
 
 ```
-
 [GET] [/setting/social]
-
 [POST] [/setting/social]
 
 ```
@@ -1186,45 +950,25 @@ __JSON Body:__
 
 
 ```
-
 {
-
     "ha_twitter_enabled": false,
-
     "ha_twitter_key": null,
-
     "ha_twitter_secret": null,
-
     "ha_twitter_accessToken": null,
-
     "ha_twitter_accessTokenSecret": null,
-
     "ha_facebook_enabled": false,
-
     "ha_facebook_id": null,
-
     "ha_facebook_secret": null,
-
     "ha_facebook_scope": null,
-
     "ha_google_enabled": false,
-
     "ha_google_id": null,
-
     "ha_google_secret": null,
-
     "ha_google_scope": null,
-
     "google_plus_public_server_key": null,
-
     "ha_linkedin_enabled": false,
-
     "ha_linkedin_key": null,
-
     "ha_linkedin_secret": null,
-
     "addThisPublisherID": null
-
 }
 
 ```
@@ -1244,9 +988,7 @@ __Endpoints:__
 
 
 ```
-
 [GET] [/setting/theme]
-
 [POST] [/setting/theme]
 
 ```
@@ -1259,6 +1001,8 @@ __JSON Body:__
 
 The JSON body for this endpoint will vary depending upon the currently installed theme.
 
+
+------
 
 
 ## Theme
@@ -1382,10 +1126,10 @@ __Example Response:__
 }
 ```
 
+------
 
 
 ## User
-
 
 The following API endpoints are made available for manipulating and managing user data.
 
@@ -1410,7 +1154,6 @@ For administrators, this endpoint supports basic Yii ```model->search()``` param
 
 
 ```
-
 GET /user/index?User[username]=username
 
 ```
@@ -1426,45 +1169,27 @@ __Example Response:__
 
 
 ```
-
 {
-
     "status": 200,
-
     "message": "Your request was successfully fulfilled",
-
-    "response": [{
-
-        "id": "1",
-
-        "email": "email@example.tld",
-
-        "username": "username",
-
-        "user_role": "9",
-
-        "status": "1",
-
-        "created": "1420134690",
-
-        "updated": "1420134690",
-
-        "role": {
-
-            "id": "9",
-
-            "name": "Administrator",
-
-            "created": "1417471909",
-
-            "updated": "1417471909"
-
-        },
-
-        "metadata": []
-
-    }]
-
+    "response": [
+        {
+            "id": "1",
+            "email": "email@example.tld",
+            "username": "username",
+            "user_role": "9",
+            "status": "1",
+            "created": "1420134690",
+            "updated": "1420134690",
+            "role": {
+                "id": "9",
+                "name": "Administrator",
+                "created": "1417471909",
+                "updated": "1417471909"
+            },
+            "metadata": []
+        }
+    ]
 }
 
 ```
@@ -1488,7 +1213,6 @@ __Example Request:__
 
 
 ```
-
 {
     "email": "email@example.tld",
     "username": "username",
@@ -1506,7 +1230,6 @@ __Example Response:__
 
 
 ```
-
 {
     "status": 200,
     "message": "Your request was successfully fulfilled",
@@ -1543,7 +1266,6 @@ __Example Request:__
 
 
 ```
-
 {
     "email": "user@example.tld",
     "password": "password",
@@ -1568,7 +1290,6 @@ __Example Request:__
 
 
 ```
-
 {
     "email": "user@example.tld"
 }
