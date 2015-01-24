@@ -4,61 +4,34 @@
 [![Gittip](http://img.shields.io/gittip/charlesportwoodii.svg?style=flat "Gittip")](https://www.gittip.com/charlesportwoodii/)
 [![License](http://img.shields.io/badge/license-MIT-orange.svg?style=flat "License")](https://github.com/charlesportwoodii/ciims-modules-api/blob/master/LICENSE.md)
 
-
-
 The CiiMS API module provides basic access to common methods and data. The CiiMS API is a JSON REST API which supports GET, POST, and DELETE. POSTS requests should be sent as JSON encoded form fields for simplicity.
 
-
-
 ## API Overview
-
 This documentation provides a comprehensive overview of everything that the CiiMS API has to offer. This documentation offers a full explaination of each API endpoint, as well as example request and responses.
-
-
 
 In this documentation, the following format will be used to describe the available endpoints. In the event there are no parameters, that section will not be included in the method signature. Additional parameters may be made available in the description.
 
-
-
 __[HTTP_VERB] [/uri/path] [params] Method Description__
 
-
-
 ## License
-
 See LICENSE.md
 
-
 ### API Objectives
-
 The API has been designed with serveral components in mind:
 
-
-
 - Performance
-
 - Security
-
 - Simplicity
-
 
 ### Accessing the API
 
 The CiiMS API can be accessed via the ```/api``` endpoint of your CiiMS instance.
 
-
-
 ### Appropriate Request Headers
-
 When making a request to the API you have 2 options for interaction, you can either send raw JSON via ```application/json``` as a raw request __OR__ you can send ```application/x-www-form-urlencoded``` form data and serialize your parameters as you would in jQuery. If any raw request body is recieved the API will assume that the data you sent is ```application/json``` and will interpret the data as that.
 
-
-
 ### Responses
-
 All responses from the API will be returned as JSON objects and will at minimum contain the HTTP response code sent with the headers, a error message if applicable, and an object called "response" which will contain the response. If an occur occurs, (depending on the resource), the response will be an empty JSON object or NULL.
-
-
 ```
 {
     "status" : <http_status_code>, 
@@ -67,31 +40,17 @@ All responses from the API will be returned as JSON objects and will at minimum 
 }
 ```
 
-
-
 ------
 
-
-
 # Authentication
-
 While some API endpoints are made publicly available, most require authentication to access. 
 
-
-
 ## [POST] [/user/token] Authenticating
-
 When you authenticate against the CiiMS API, you'll be presented with a long-life token that you can use for future requests. This long-life token should be kept in a secure location, as it grants whoever controls it full access to any available resource that the token owner has access to.
-
-
 
 All fields listed below are required:
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -99,20 +58,11 @@ __Example Request:__
     "password": "<password>",
     "name": "<yourApplicationName>"
 }
-
 ```
-
-
 
 If your authentication request is successfull, you'll recieve the following response:
 
-
-
 __Example Response:__
-
-
-
-
 
 ```
 {
@@ -120,14 +70,9 @@ __Example Response:__
     "message": "Your request was successfully fulfilled",
     "response": "<long-life-token>"
 }
-
 ```
 
-
-
 In the event that authentication fails, you'll be presented with a generic 403 error message.
-
-
 
 ```
 {
@@ -135,34 +80,19 @@ In the event that authentication fails, you'll be presented with a generic 403 e
     "message": "Unable to authenticate.",
     "response": false
 }
-
 ```
 
-
-
 Once authenticated, any request that requires authentication can be accessed by including the following headers with your request:
-
-
 
 ```
     X-Auth-Email: user@example.tld
     X-Auth-Token: <long-life-token>
-
 ```
 
-
-
 ## [DELETE] [/user/token] Deauthenticating
-
-
-
 If for any reason you believe your long-life token has been comprimised, it is advised to immediatly revolk your token.
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -170,42 +100,22 @@ __Example Response:__
     "message": "Your request was successfully fulfilled",
     "response": true
 }
-
 ```
 
-
-
 ------
-
-
-
-
 
 # Available API Methods
-
-
-
 The following API endpoints are made available for testing. This next section will divide the API endpoints by controller/namespace.
-
 
 ------
 
-
 ## Card
-
 The card API is considered private, and should not be used directly. Do not attempt to directly access the card endpoint.
 
-
-
 ### [GET] [/card/index] Retrieve Dashboard Cards
-
 A list of all installed dashboard cards for the current user can be retrieved by accessing this endpoint
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -220,20 +130,12 @@ __Example Response:__
         }
     }
 }
-
 ```
 
-
-
 ### [POST] [/card/index] Install a new Dashboard Card
-
 This endpoint is used to install a new dashboard card for your user.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -241,26 +143,15 @@ __Example Request:__
     "url": "<card_endppint_url_fqdn>",
     "details": {}
 }
-
 ```
 
-
-
 ### [DELETE] [/card/index] [id] Deletes an installed card
-
 Cards can be deleted from a user by sending a request ot his endppint
 
-
-
 ### [GET] [/card/details] [id] Retrieves the card details
-
 This endpoint is automatically called when the card details are loaded in the dashboard.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -268,44 +159,27 @@ __Example Request:__
     "message": "Your request was successfully fulfilled",
     "response": {}
 }
-
 ```
 
-
-
 ### [POST] [/card/details] [id] Set card details
-
 Card details can be modified by sending a POST request to this endpoint. This endppoint is called when any details for a card change.
 
-
-
 ### [POST] [/card/rearrange] Rearrange Dashboard
-
 This endpoint allows the dashboard cards to be re-arranged.
 
-
 ------
-
 
 ## Category
 
 The category endpoints allow users and administrators to view and manage categories.
 
-
-
 ### [GET] [/category/index] [OPT id] Retrieve categories
 
 Any user may retrieve a public listing of all categories in the categories currently in the system. This endpoint supports pagination via the ```page``` GET parameter, and also supports searching & filtering.
 
-
-
 If the ID parameter is provided, this endpoint will only return data about the requested category/
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -346,20 +220,13 @@ __Example Response:__
         }
     ]
 }
-
 ```
-
-
 
 ### [POST] [/category/index] [OPT id] Create/Update Category
 
 New categories can by created by sending a POST request to this endpoint. If an ID is provided, the category will be updated if it exists.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -367,14 +234,9 @@ __Example Request:__
     "slug": "<uri_slug>",
     "parent_id": "<id_of_parent_category>"
 }
-
 ```
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -399,28 +261,18 @@ __Example Response:__
         }
     ]
 }
-
 ```
-
-
 
 ### [DELETE] [/category/index] [id] Delete a Category
 
 Categories can be deleted by sending a DELETE request to this endpoint.
 
-
-
 __Limitations:__
 
-
-
 1. The root category "Uncategorized" cannot be deleted
-
 2. When a category is deleted, all child categories will be reassigned to the deleted categories parent category.
 
-
 ------
-
 
 ## Comment
 
@@ -480,8 +332,6 @@ __Example Response:__
     }]
 }
 ```
-
-
 ### [GET] [/comment/user] [id] Retrieves comments for a given user
 Retrieves comments for a given user
 
@@ -531,7 +381,6 @@ __Example Response:__
 }
 ```
 
-
 ### [POST] [/comment/count] Retrieves a count of comments for a list of entries
 Retrieves comment countes for the requested entries.
 
@@ -565,7 +414,6 @@ __Example Request:__
     "author_id": <user_id>,
     "comment": <comment>
 }
-
 ```
 
 __Example Response:__
@@ -604,28 +452,133 @@ Flags a comment for review/as contriversial.
 
 ------
 
-
 ## Content
+This endpoints allows users and administrators to view and manage content.
 
+### [GET] [/content/index] [OPT id] View content
+This API endpoint allows users to retrieve all published and viewable content within the system.
+
+Unauthenticted users will be able to see all published content. Authenticated users will be able to see all content that would be viewable for them at their permissions level. For instance, administrators can see all content once authenticated, whereas collaborators can only published content and content which they are the author of (including drafts).
+
+This endpoint supports pagination via the ```page``` GET parameter, and full rich searching on all non-extended attributes (eg if you want to search a category you'd specify ```Content[category_id]``` rather than the sub-attributes).
+
+If the ```id``` paremter is specified, this endpooint will only return that content as a single object rather than as an array of objects.
+
+__Example Response:__
+
+```
+{
+    "status": 200,
+    "message": "Your request was successfully fulfilled",
+    "response": [{
+        "id": "119",
+        "title": "Test Entry",
+        "content": "test",
+        "excerpt": "test",
+        "slug": "test-entry",
+        "type_id": "2",
+        "commentable": "1",
+        "status": "1",
+        "like_count": "0",
+        "published": "1420215873",
+        "created": "1420215873",
+        "updated": "1420215873",
+        "author": {
+            "id": "1",
+            "username": "test"
+        },
+        "category": {
+            "id": "1",
+            "name": "Uncategorized",
+            "slug": "uncategorized",
+            "created": "1417471909",
+            "updated": "1417471909"
+        },
+        "metadata": [{
+            "key": "autosave",
+            "value": "{}"
+            "created": "1420215873",
+            "updated": "1420215873"
+        }]
+    }]
+}
+```
+
+### [POST] [/content/index] [OPT id] Create/Update a Content entry
+An empty POST request to this endpoint will create a new draft for authenticated and authorized user. The response of this object will be the base content object described above. Using this ID you may then edit the content entry as desired using the base object that you recieve from the initial creation point.
+
+### [DELETE] [/content/index] Delete a content entry
+Authenticated and authorized users can delete a content entry by sending an empty DELETE request to this endpoint.
+
+### [GET] [/content/publish] [OPT id] Publishes and entry
+Authenticated and authorized users can publish new content or drafts by submitting a request to this endpoint. Publishing will publish the current revision of the document, and incriment the ```VID``` (revision id) attribute of the content. That new entry will supercede any current entries.
+
+### [GET] [/content/unpublish] [OPT id] Unpublishes and entry
+Authenticated and authorized users can unpublish content by sending a request to this endpoint.
+
+### [GET] [/content/tag] [OPT id] Retrieve content tags
+A listing of all tags can be retrieved by sending a GET request to this endpoint
+
+__Example Response:__
+
+```
+{
+    "status": 200,
+    "message": "Your request was successfully fulfilled",
+    "response": [
+        "example_tag"
+    ]
+}
+```
+
+### [POST] [/content/tag] [id] Add a new tag to a entry
+Tags can be added to to a given content entry by sending a POST request to this endpoint, with the ```id``` of the content as a GET param.
+
+__Example Request:__
+
+```
+{ 
+    "tag": "example_tag"
+}
+```
+
+__Example Response:__
+
+```
+{
+    "status": 200,
+    "message": "Your request was successfully fulfilled",
+    "response": [
+        "example_tag"
+    ]
+}
+```
+
+### [DELETE] [/content/tag] [id, tag] Remove a tag from an entry
+A tag can be deleted from a given content by sending a DELETE request to this endpoint wuth both an ```id``` and ```tag``` param, where ```id``` is the ID of the content entry, and ```tag``` is the string name of the tag.
+
+### [GET] [/content/like] [id] Like/unlike a content 
+Authenticated users can like/unlike a content entry by sending a GET request to this endpoint. The endpoint will automatically toggle based upon whether the content is liked, unliked, or has no like state for the user.
+
+### [GET] [/content/autosave] [id] Retrieves last autosave data
+This endpoint will return the current autosave data for a given content entry. Each content entry, once created, will contain an autosave state. This state is used to preserve progress across browsers and platforms, and will retain core content data throughout edits.
+
+### [POST] [/content/autosave] [id] Updates/Creates an autosave entry
+When working with content, you should use the autosave POST endpoint to periodically save the state of any drafts or changes. This autosave state is stored independently of the ```content``` table, and is overwritten on every change is prevent extra data from being written to the database. This endpoint accepts the same attributes as the main ```[POST] /content/index``` endpoint.
+
+### [GET] [/content/revision] [id] Retrieves content revisions
+This endpoint will return all revisions currently available for a given content entry. The revisions will take the same form as the main ```[GET] /content/index``` endpoint.
 
 ------
-
-
 ## Default
 
 The following endpoints are available on the default endpoint.
-
-
 
 ### [GET] [/default/index | /index | /] Retrieves API status
 
 This endpoint will return the current status of the API. Curently this checks the connectivity of the database.
 
-
-
 __Example Response:__ 
-
-
 
 ```
 {
@@ -636,43 +589,24 @@ __Example Response:__
 
 ```
 
-
-
 ### [POST] [/default/jsonProxy] JSON Proxy
 
 A JavaScript frontend presents some limitations when attempting to access data that doesn't provide appropriate CORS headers, or is not available over HTTPS when SSL is used. This endpoint can be utilized to get around these restrictions for authenticated users with a role >= 5 (Collaborators or any higher role)
 
-
-
 __WARNING:__
-
-
 
 This API endpoint can be vulnerable to abuse by any authenticated user. Therefore access to this endpoint is restricted to authenticated users with collaboration abilities or higher (Role >= 5).
 
-
-
 __Limitations:__
-
-
 
 Due to the nature of this endpoint, there are several limitations to its use.
 
-
-
 1. Access to limited to authenticated users with collaboration ability or _higher_.
-
 2. Data will be cached server side fo 10 minutes.
-
 3. This endppint can only process JSON response
-
 4. This endpoint will only request data from the provided URL, and will not pass on any headers or other information.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -681,39 +615,25 @@ __Example Request:__
 
 ```
 
-
-
 The response of this result will be cached for 10 minutes to prevent abuse, and will dump the result of the cURL request in the response parameter of the response object.
 
-
 ------
-
 
 ## Event
 
 The Event API endpoint allows CiiMS' internal ```analytics.js``` plugin to track page views and other data. This information is used to display recent page views for content.
 
-
-
 ### [GET] [/event/index] Search events
 
 Allows users to search recent events. This method is available to users with collaboration status or higher
 
-
-
 This method supports basic Yii search GET parameters and pagination via the ```Event``` model.
-
-
 
 ### [POST] [/event/index] Record an event
 
 Records an event. This endpoint is open ended and will allow developers to record custom events.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -724,17 +644,11 @@ __Example Request:__
 
 ```
 
-
-
 ### [POST] [/event/count] Retrieve event counts
 
 Retreives the ```_pageview``` event counts for the last 24 hours period for the provided ids. This method is available to users with collaboration status or higher.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -743,11 +657,7 @@ __Example Request:__
 
 ```
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -759,40 +669,22 @@ __Example Response:__
 }
 
 ```
-
-
 ------
-
-
 ## Setting
 
 The setting endpoint can be used to view and manage all settings that CiiMS stores and uses.
 
-
-
 __Note:__
-
-
 
 New settings may be added at any time, and this documentation may not reflect the latest setting. To retrieve the latest list of available settings please reference the models listed in [CiiMS::protected/models/settings](https://github.com/charlesportwoodii/CiiMS/tree/master/protected/models/settings)
 
-
-
 The following section outlines the available settings for that endpoint. Each section will list the available settings for both the GET and POST endpoints. Each endpoint will return the listed settings as shown (relative to your instance) for both the GET and POST responses. The listed JSON object is what is used for the POST body for modification.
-
-
 
 ### General Settings
 
-
-
 The following endpoints allow admins to manage general settings
 
-
-
 __Endpoints:__
-
-
 
 ```
 [GET] [/setting/index]
@@ -800,11 +692,7 @@ __Endpoints:__
 
 ```
 
-
-
 __JSON Body:__
-
-
 
 ```
 {
@@ -831,19 +719,11 @@ __JSON Body:__
 
 ```
 
-
-
 ### Analytics Settings
-
-
 
 The following endpoints allow admins to manage analytics settings
 
-
-
 __Endpoints:__
-
-
 
 ```
 [GET] [/setting/analytics]
@@ -851,11 +731,7 @@ __Endpoints:__
 
 ```
 
-
-
 __JSON Body:__
-
-
 
 ```
 {
@@ -872,23 +748,13 @@ __JSON Body:__
 
 ```
 
-
-
 ### Email Settings
-
-
 
 The following endpoints allow admins manage email settings.
 
-
-
 When left empty, CiiMS' SMTP adapter will attempt to send emails via the ```sendmail``` method. If any SMTP attributes are not empty, then CiiMS will attempt to send information using that driver. For testing, CiiMS provide
 
-
-
 __Endpoints:__
-
-
 
 ```
 [GET] [/setting/email]
@@ -896,11 +762,7 @@ __Endpoints:__
 
 ```
 
-
-
 __JSON Body:__
-
-
 
 ```
 {
@@ -916,27 +778,15 @@ __JSON Body:__
 
 ```
 
-
-
 #### [GET] [/setting/emailtest] Test email settings
-
-
 
 After adjusting your email settings, it's __strongly__ advised to verify that your settings work. You can test this by sending a GET request to this endpoint, which will attempt to send an email to your currently logged in user.
 
-
-
 ### Social Settings
-
-
 
 The following endpoints allow admins manage social settings. Most of these settings specifically apply to the HybridAuth module for social authentication, it can be used to store general social settings for use in other modules/themes.
 
-
-
 __Endpoints:__
-
-
 
 ```
 [GET] [/setting/social]
@@ -944,11 +794,7 @@ __Endpoints:__
 
 ```
 
-
-
 __JSON Body:__
-
-
 ```
 {
     "ha_twitter_enabled": false,
@@ -973,19 +819,11 @@ __JSON Body:__
 
 ```
 
-
-
 ### Theme Settings
-
-
 
 The following endpoints allow admins manage theme settings.
 
-
-
 __Endpoints:__
-
-
 
 ```
 [GET] [/setting/theme]
@@ -993,21 +831,11 @@ __Endpoints:__
 
 ```
 
-
-
 __JSON Body:__
 
-
-
 The JSON body for this endpoint will vary depending upon the currently installed theme.
-
-
 ------
-
-
 ## Theme
-
-
 The following API endpoints are made available for managing themes.
 
 ### Callbacks
@@ -1127,46 +955,28 @@ __Example Response:__
 ```
 
 ------
-
-
 ## User
 
 The following API endpoints are made available for manipulating and managing user data.
 
-
-
 ### [GET] [/user/index] [OPT: id=user_id] Retrieving User Information
-
-
 
 Authenticated users can retrieve information about themselves by querying this endpoint. This endpoint will dump all available data that is allowed by the user's role.
 
-
-
 Note that this endpoint will only permit the user to access their own information. Only administrators can access information about another user. Authenticated administrators will see a full listing of all users in the system if the ```id``` parameter is not specified.
-
-
 
 __Additional Params:__
 
 For administrators, this endpoint supports basic Yii ```model->search()``` parameters, allowing for searching & filtering by any GET parameters.
-
-
 
 ```
 GET /user/index?User[username]=username
 
 ```
 
-
-
 This endpoint supports pagination via the ```page``` GET variable.
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -1194,23 +1004,13 @@ __Example Response:__
 
 ```
 
-
-
 ### [POST] [/user/index] [id] Update a User
-
-
 
 Authenticated users can update their own information by sending a POST request to this endpoint, while administrators can update information for any user.
 
-
-
 If the ID parameters is not provided, then an administrative POST to this endpoint will create a new user with the information provided. For creation of new users, all user fields are required. For updating users, you only need to provide the fields you want to update
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -1223,11 +1023,7 @@ __Example Request:__
 
 ```
 
-
-
 __Example Response:__
-
-
 
 ```
 {
@@ -1253,17 +1049,11 @@ __Example Response:__
 
 ```
 
-
-
 ### [POST] [/user/register] Register a new User
 
 Unauthenticated users can register a new user to the site.
 
-
-
 __Example Request:__
-
-
 
 ```
 {
@@ -1275,19 +1065,11 @@ __Example Request:__
 
 ```
 
-
-
 ### [POST] [/user/invite] Invite a User
-
-
 
 Administrators can invite new users to the platform by sending a POST request to this endpoint
 
-
-
 __Example Request:__
-
-
 
 ```
 {

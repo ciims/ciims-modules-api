@@ -9,15 +9,15 @@ class ContentController extends ApiController
                 'actions' => array('index', 'tag')
             ),
             array('allow',
-                'actions' => array('indexPost', 'indexDelete', 'tagPost', 'tagDelete', 'like'),
+                'actions' => array('like'),
                 'expression' => '$user!=NULL'
             ),
             array('allow',
-                'actions' => array('uploadImagePost', 'autosavePost', 'autosave', 'revisions'),
+                'actions' => array('indexPost', 'tagPost', 'tagDelete', 'uploadImagePost', 'autosavePost', 'autosave', 'revisions'),
                 'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
             ),
             array('allow',
-                'actions' => array('publish', 'unpublish'),
+                'actions' => array('indexDelete', 'publish', 'unpublish'),
                 'expression' => '$user->role->hasPermission("publish")'
             ),
             array('deny')
