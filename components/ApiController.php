@@ -179,6 +179,13 @@ class ApiController extends CiiController
                 $response = null;
                 $this->status = $e->statusCode;
                 $this->message = $e->getMessage();
+            } catch (Exception $e) {
+                $response = null;
+                $this->status = 500;
+                $this->message = Yii::t('Api.Controller', 'An unexpected error occured.');
+
+                // Log this error
+                Yii::log($e->getMessage(), 'error', 'Api.controller');
             }
 
 	        if($response===false)
