@@ -30,7 +30,7 @@ class ApiModule extends CWebModule
             	'errorAction'  => 'api/default/error',
         	),
             'messages' => array(
-                'class' => 'ext.cii.components.CiiPHPMessageSource',
+                'class' => 'cii.components.CiiPHPMessageSource',
                 'basePath' => Yii::getPathOfAlias('application.modules.api')
             )
         ));
