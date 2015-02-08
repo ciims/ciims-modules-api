@@ -181,7 +181,7 @@ class UserController extends ApiController
 			// Prevent users from promoting or demoting themselves
 			// TODO: Figure out how to move this to the ProfileForm model
 			// 	     Since $this->user != Yii::app()->user
-			if ($this->user->id == $_POST['id'] && Cii::get($_POST, 'user_role', $this->user->role->id) != $this->user->role->id)
+			if ($this->user->id == $id && Cii::get($_POST, 'user_role', $this->user->role->id) != $this->user->role->id)
 				$model->addError('user_role', Yii::t('ciims.models.ProfileForm', 'You cannot promote or demote yourself.'));
 
             $model->attributes = $_POST;
