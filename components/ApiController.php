@@ -184,6 +184,9 @@ class ApiController extends CiiController
                 $this->status = 500;
                 $this->message = Yii::t('Api.Controller', 'An unexpected error occured.');
 
+                if (YII_DEBUG)
+                    $response = $e->getMessage();
+
                 // Log this error
                 Yii::log($e->getMessage(), 'error', 'Api.controller');
             }
@@ -205,6 +208,7 @@ class ApiController extends CiiController
      */
     public function renderOutput($response = array(), $status=NULL, $message=NULL)
     {
+        http_response_code( $status != NULL ? $status : $this->status );
         header('Content-Type: application/json');
         header("Access-Control-Allow-Origin: *");
         header("Access-Control-Allow-Headers: x-auth-token, x-auth-email");
