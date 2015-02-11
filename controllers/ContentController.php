@@ -377,11 +377,34 @@ class ContentController extends ApiController
 
         $vid = $model->vid;
         $model = new Content;
+        $model->id = $id;
         $model->populate($_POST);
         $model->vid = Yii::app()->db->createCommand('SELECT MAX(vid)+1 FROM content WHERE id = :id')->bindParam(':id', $id)->queryScalar();
 
         if ($model->save())
-            return $model->getApiAttributes();         
+           return $model->getAPIAttributes(array(
+                            'category_id', 
+                            'parent_id', 
+                            'author_id'
+                        ), 
+                        array(
+                            'author' => array(
+                                'password',
+                                'activation_key',
+                                'email',
+                                'about',
+                                'user_role',
+                                'status',
+                                'created',
+                                'updated'
+                            ), 
+                            'category' => array(
+                                'parent_id'
+                            ),
+                            'metadata' => array(
+                                'content_id'
+                            )
+                        ));         
 
         return $this->returnError(400, NULL, $model->getErrors());
     }
