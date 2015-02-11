@@ -22,5 +22,8 @@
         "wiki" : "https://github.com/charlesportwoodii/ciims-modules-api/wiki/_pages",
         "source" : "https://github.com/charlesportwoodii/ciims-modules-api"
     },
-    "homepage": "https://www.ciims.org"
+    "homepage": "https://www.ciims.org",
+    "require": {
+        "knplabs/packagist-api": "v1.2"
+    }
 }
