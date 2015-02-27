@@ -122,7 +122,6 @@ class ApiController extends CiiController
             if($action!==null && !method_exists($action,'run'))
                 throw new CException(Yii::t('yii', 'Action class {class} must implement the "run" method.', array('{class}'=>get_class($action))));
 
-            $this->renderOutput(null, 404, Yii::t('yii', 'Unable to resolve the request `{request}`', array('{request}' => $this->id.'/'.$actionID)));
             return $action;
         }
     }

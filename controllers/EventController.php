@@ -9,7 +9,7 @@ class EventController extends ApiController
 				'actions' => array('indexPost')
 			),
 			array('allow',
-				'actions' => array('index', 'countPost'),
+				'actions' => array('index', 'countPost', 'pageviews'),
 				'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
 			),
 			array('deny')
@@ -42,6 +42,24 @@ class EventController extends ApiController
         	'count' => $model->count(), // This to the TOTAL count (as if pagination DNE)
         	'data' => $response // This is JUST the paginated response
         );
+	}
+
+	/**
+	 * Shows pageview results
+	 * @return array
+	 */
+	public function actionPageviews()
+	{
+		$models = Events::model()->groupByUrl()->findAll();
+		$response = array();
+
+		foreach ($models as $model)
+			$response[] = array(
+				'uri' => $model->uri,
+				'count' => $model->id
+			);
+
+		return $response;
 	}
 
 	/**
