@@ -33,7 +33,9 @@ class ThemeController extends ApiController
 
         if ($this->actionIsInstalled($name))
         {
-            $model = Configuration::model()->findByAttributes(array('key' => 'theme'));
+            $model = Configuration::model()->getPrototype('Configuration', array(
+                'key' => 'theme'
+            ), array('value' => $name));
             $model->value = $name;
 
             if ($model->save())
