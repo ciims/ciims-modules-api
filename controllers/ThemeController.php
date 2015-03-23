@@ -258,9 +258,7 @@ class ThemeController extends ApiController
         if (defined('CII_CONFIG'))
             return false;
 
-        // Use Github RAW for now
-        // TODO: This should be a CDN URL instead of Github
-        $url = 'https://raw.githubusercontent.com/ciims/themes/master/index.json';
+        $url = 'https://themes.ciims.io/index.json';
 
         $result = Yii::app()->cache->get('CiiMS::Themes::Available');
         if ($result === false)
