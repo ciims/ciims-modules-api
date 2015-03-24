@@ -41,6 +41,8 @@ class ThemeController extends ApiController
             if ($model->save())
             {
                 Yii::app()->cache->delete('settings_theme');
+		# Cache flush is required to reset the views
+		Yii::app()->cache->flush();
                 return Cii::getConfig('theme');
             }
         }
