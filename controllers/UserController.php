@@ -187,7 +187,7 @@ class UserController extends ApiController
             $model->attributes = $_POST;
 
 			if ($model->save())
-		    	return Users::model()->findByAttributes(array('email' => $model->email))->getAPIAttributes(array('password'), array('role', 'metadata'));
+		    	return Users::model()->findByAttributes(array('email' => $this->user->email))->getAPIAttributes(array('password'), array('role', 'metadata'));
 		    else
 		    	return $this->returnError(400, NULL, $model->getErrors());
 		}
