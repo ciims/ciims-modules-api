@@ -245,7 +245,7 @@ class ContentController extends ApiController
     {
         $model = $this->loadModel($id);
 
-        if (!($this->user->id == $model->author->id || $this->user->role->hasPermission('modify')))
+        if (!$this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to modify tags.'));
 
         if ($model->addTag(Cii::get($_POST, 'tag')))
@@ -262,7 +262,7 @@ class ContentController extends ApiController
     {
         $model = $this->loadModel($id);
 
-        if (!($this->user->id == $model->author->id || $this->user->role->hasPermission('modify')))
+        if ($this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to modify tags.'));
 
         if ($model->removeTag($tag))
@@ -281,7 +281,7 @@ class ContentController extends ApiController
     {
         $model = $this->loadModel($id);
 
-        if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
+        if (!$this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
         $autosaveModel = ContentMetadata::model()->findByAttributes(array('content_id' => $model->id, 'key' => 'autosave'));
@@ -302,7 +302,7 @@ class ContentController extends ApiController
     {
         $model = $this->loadModel($id);
 
-        if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
+        if (!$this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
         $model->populate($_POST);
@@ -369,7 +369,7 @@ class ContentController extends ApiController
     {
         $model = $this->loadModel($id);
 
-        if ($model->author->id != $this->user->id ||!$this->user->role->hasPermission('modify'))
+        if (!$this->user->role->hasPermission('modify'))
             throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to create new entries.'));
 
         if ($this->user->role->isA('author') || $this->user->role->isA('collaborator'))
