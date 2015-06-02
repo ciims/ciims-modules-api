@@ -1,23 +1,26 @@
 <?php
 
+/**
+ * Class handles setting maangement via SettingsModel
+ */
 class SettingController extends ApiController
 {
 	/**
-     * Specifies the access control rules.
-     * This method is used by the 'accessControl' filter.
-     * @return array access control rules
-     */
-    public function accessRules()
-    {   
-        return array(
-            array('allow',
-                'expression' => '$user!=NULL&&($user->role->hasPermission("manage"))'
-            ),
-            array('deny') 
-        );  
-    }
+	 * Specifies the access control rules.
+	 * This method is used by the 'accessControl' filter.
+	 * @return array access control rules
+	 */
+	public function accessRules()
+	{
+		return array(
+			array('allow',
+				'expression' => '$user!=NULL&&($user->role->hasPermission("manage"))'
+			),
+			array('deny')
+		);
+	}
 
-    /**
+	/**
 	 * [GET] [/api/setting]
 	 * @class GeneralSettings
 	 */
@@ -63,14 +66,26 @@ class SettingController extends ApiController
 	 */
 	public function actionEmailTest()
 	{
-		$data = $this->sendEmail($this->user,  Yii::t('Api.settings', 'CiiMS Test Email'), 'application.modules.api.views.email.test', array(), true, true, true, true);
+		$data = $this->sendEmail(
+			$this->user,
+			Yii::t('Api.settings', 'CiiMS Test Email'),
+			'application.modules.api.views.email.test',
+			array(),
+			true,
+			true,
+			true,
+			true
+		);
 
 		if ($data !== true)
 			throw new CHttpException(400, $data);
 
-		$this->message = Yii::t('Api.settings', 'CiiMS was successfully able to send an email to {{email}}. Please verify that you recieved the test email.', array(
-			'{{email}}' => CHtml::tag('strong', array(), $this->user->email)
-		));
+		$this->message = Yii::t(
+			'Api.settings', 
+			'CiiMS was successfully able to send an email to {{email}}. Please verify that you recieved the test email.', 
+			array('{{email}}' => CHtml::tag('strong', array(), $this->user->email))
+		);
+		
 		return $data;
 	}
 
@@ -180,7 +195,10 @@ class SettingController extends ApiController
 		try {
 			$model = new Theme();
 		} catch(Exception $e) {
-			throw new CHttpException(400,  Yii::t('Api.setting', 'The requested theme type is not set. Please set a theme before attempting to change theme settings.'));
+			throw new CHttpException(400,  Yii::t(
+				'Api.setting', 
+				'The requested theme type is not set. Please set a theme before attempting to change theme settings.'
+			));
 		}
 
 		return $model;
@@ -209,7 +227,7 @@ class SettingController extends ApiController
 	 */
 	private function getModelAttributes(&$model)
 	{
-		$response = array();
+		$response 	= array();
 		$reflection = new ReflectionClass($model);
 		$properties = $reflection->getProperties(ReflectionProperty::IS_PROTECTED);
 
