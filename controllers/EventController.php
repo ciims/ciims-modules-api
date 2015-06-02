@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Class handles processing and storage of events
+ */
 class EventController extends ApiController
 {
 	public function accessRules()
@@ -13,35 +16,38 @@ class EventController extends ApiController
 				'expression' => '$user!=NULL&&$user->role->hasPermission("create")'
 			),
 			array('deny')
-		);
+			);
 	}
 
+	/**
+	 * Provides functionality to search through events
+	 */
 	public function actionIndex()
 	{
 		$model = new Events('search');
-		$model->unsetAttributes();  // clear any default values
-        
-        if(isset($_GET['Event']))
-            $model->attributes = $_GET['Event'];
+		$model->unsetAttributes();
 
-        $dataProvider = $model->search();
-        $dataProvider->pagination = array(
-            'pageVar' => 'page'
-        );
+		if (isset($_GET['Event']))
+			$model->attributes = $_GET['Event'];
 
-        // Throw a 404 if we exceed the number of available results
-        if ($dataProvider->totalItemCount == 0 || ($dataProvider->totalItemCount / ($dataProvider->itemCount * Cii::get($_GET, 'page', 1))) < 1)
-            throw new CHttpException(404, Yii::t('Api.events', 'No results found'));
+		$dataProvider = $model->search();
+		$dataProvider->pagination = array(
+			'pageVar' => 'page'
+		);
 
-        $response = array();
+		// Throw a 404 if we exceed the number of available results
+		if ($dataProvider->totalItemCount == 0 || ($dataProvider->totalItemCount / ($dataProvider->itemCount * Cii::get($_GET, 'page', 1))) < 1)
+			throw new CHttpException(404, Yii::t('Api.events', 'No results found'));
 
-        foreach ($dataProvider->getData() as $content)
-            $response[] = $content->getAPIAttributes();
+		$response = array();
 
-        return array(
-        	'count' => $model->count(), // This to the TOTAL count (as if pagination DNE)
-        	'data' => $response // This is JUST the paginated response
-        );
+		foreach ($dataProvider->getData() as $content)
+			$response[] = $content->getAPIAttributes();
+
+		return array(
+			'count' => $model->count(), // This to the TOTAL count (as if pagination DNE)
+			'data' => $response // This is JUST the paginated response
+		);
 	}
 
 	/**
@@ -106,14 +112,14 @@ class EventController extends ApiController
 		// Set failure?
 		if (isset($attributes['content_id']))
 			$event->content_id = $attributes['content_id'];
-		
+
 		// Try to figure out the correct content_id if one isn't provided
-        if ($event->content_id == NULL)
-        {
-        	$content = Content::model()->findByAttributes(array('slug' => $event->uri));
-        	if ($content !== NULL)
-        		$event->content_id = $content->id;
-        }
+		if ($event->content_id == NULL)
+		{
+			$content = Content::model()->findByAttributes(array('slug' => $event->uri));
+			if ($content !== NULL)
+				$event->content_id = $content->id;
+		}
 
 		if ($id = Cii::get($attributes, 'content_id', false))
 		{
