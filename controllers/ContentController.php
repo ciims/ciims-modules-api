@@ -266,7 +266,7 @@ class ContentController extends ApiController
 	{
 		$model = $this->loadModel($id);
 
-		if ($this->user->role->hasPermission('modify'))
+		if (!$this->user->role->hasPermission('modify'))
 			throw new CHttpException(403, Yii::t('Api.content', 'You do not have permission to modify tags.'));
 
 		if ($model->removeTag($tag))
