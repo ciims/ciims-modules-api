@@ -14,7 +14,7 @@ class UserController extends ApiController
 	{
 		return array(
 			array('allow',
-				'actions' => array('tokenPost', 'registerPost')
+				'actions' => array('tokenPost', 'registerPost', 'authenticatePost')
 			),
 			array('allow',
 				'actions' => array('tokenDelete'),
@@ -42,22 +42,35 @@ class UserController extends ApiController
 		$model = new LoginForm;
 		$model->username = Cii::get($_POST, 'email');
 		$model->password = Cii::get($_POST, 'password');
+		$model->twoFactorCode = Cii::get($_POST, '2fa', false);
 
 		if (Cii::get($_POST, 'name', NULL) == NULL)
 			throw new CHttpException(400, Yii::t('Api.user', 'Application name must be defined.'));
 		else
 			$model->app_name = Cii::get($_POST, 'name', 'api');
 
-		if ($model->validate())
+		if ($model->login())
 		{
-			if ($model->login())
-				return UserMetadata::model()->findByAttributes(array(
-							'user_id' => Users::model()->findByAttributes(array('email' => Cii::get($_POST, 'email')))->id, 
-							'key' => 'api_key' . $_POST['name'])
-					   )->value;
+			$data = $model->getIdentity()->getUser()->getMetadataObject('api_key'.Cii::get($_POST, 'name'));
+			if (get_class($data) === "UserMetadata")
+				return $data->value;
+
+			return false;
 		}
 
-		return $this->returnError(403, Yii::t('Api.user', 'Unable to authenticate.'), null);
+		// Two factor authentication error code. A little more specific
+		if ($model->needsTwoFactorAuth())
+			return $this->returnError(412, Yii::t('Api.user', 'Unable to authenticate.'), false);
+		
+		return $this->returnError(403, Yii::t('Api.user', 'Unable to authenticate.'), false);
+	}
+
+	/**
+	 * @see [POST] [/user/token]
+	 */
+	public function actionAuthenticatePost()
+	{
+		return $this->actionTokenPost();
 	}
 
 	/**

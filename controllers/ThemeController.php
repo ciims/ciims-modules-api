@@ -149,7 +149,7 @@ class ThemeController extends ApiController
 	}
 
 	/**
-	 * Installs and or updates a theme from packagist using the provided name
+	 * Installs and or updates a theme  using the provided name
 	 * @return boolean
 	 */
 	public function actionInstall($name=false)
@@ -259,7 +259,7 @@ class ThemeController extends ApiController
 	}
 
 	/**
-	 * Lists ciims-themes that are available for download via packagist
+	 * Lists ciims-themes that are available for download via
 	 * @return array
 	 */
 	public function actionList()

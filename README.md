@@ -60,6 +60,21 @@ __Example Request:__
 }
 ```
 
+If your authentication credentials are valid, but the account is protected by a two factor authentication code, you will receive an HTTP 412 error message indicating the two factor code was missing.
+```
+{
+    "status": 412,
+    "message": "Unable to authenticate.",
+    "response": false
+}
+```
+
+If you receive this error, you'll need to supply the following data in the JSON request body:
+```
+    "2fa": "<twoFactorAuthenticationCode>",
+```
+
+
 If your authentication request is successfull, you'll recieve the following response:
 
 __Example Response:__
@@ -88,6 +103,9 @@ Once authenticated, any request that requires authentication can be accessed by 
     X-Auth-Email: user@example.tld
     X-Auth-Token: <long-life-token>
 ```
+
+### [POST] [/user/authenticate] Authenticating
+Acts as an alias to /user/token
 
 ## [DELETE] [/user/token] Deauthenticating
 If for any reason you believe your long-life token has been comprimised, it is advised to immediatly revolk your token.
