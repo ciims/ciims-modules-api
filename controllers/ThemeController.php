@@ -93,7 +93,7 @@ class ThemeController extends ApiController
 	 */
 	private function updateCheck($name)
 	{
-		$filePath = Yii::getPathOfAlias('webroot.themes').DS.$name;
+		$filePath = Yii::getPathOfAlias('base.themes').DS.$name;
 		$details = $this->actionDetails($name);
 
 		if (file_exists($filePath.DS.'VERSION'))
@@ -157,7 +157,7 @@ class ThemeController extends ApiController
 		if ($name == false || defined('CII_CONFIG'))
 			return false;
 
-		$filePath 	= Yii::getPathOfAlias('webroot.themes').DS.$name;
+		$filePath 	= Yii::getPathOfAlias('base.themes').DS.$name;
 		$details 	= $this->actionDetails($name);
 
 		// If the theme is already installed, make sure it is the correct version, otherwise we'll be performing an upgrade
@@ -408,7 +408,7 @@ class ThemeController extends ApiController
 		if ($method == NULL)
 			throw new CHttpException(400, Yii::t('Api.Theme', 'Method name is missing'));
 
-		Yii::import('webroot.themes.' . $theme . '.Theme');
+		Yii::import('base.themes.' . $theme . '.Theme');
 		$theme = new Theme;
 
 		if (method_exists($theme, $method))
