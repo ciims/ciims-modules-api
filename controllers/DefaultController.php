@@ -9,14 +9,14 @@ class DefaultController extends ApiController
 	{
 		return array(
 			array('allow',
-				'actions' => array('index')
+				'actions' => array('index', 'error')
 			),
 			array('allow',
 				'actions' => array('JsonProxyPost'),
 				'expression' => '$user!=NULL&&$user->role->id>=5'
 			),
 			array('deny')
-			);
+		);
 	}
 
 	/**
@@ -43,27 +43,22 @@ class DefaultController extends ApiController
 		if ($url === false)
 			throw new CHttpException(400, Yii::t('Api.index', 'Missing $_POST[url] parameter'));
 
-		$response = Yii::app()->cache->get('API::Proxy::'.$url);
+		$hash = md5($url);
+		$response = Yii::app()->cache->get('API::Proxy::'.$hash);
 
 		if ($response == false)
 		{
-			$ch = curl_init();
-			curl_setopt_array($ch, array(
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_FOLLOWLOCATION => true,
-				CURLOPT_URL            => $url,
-			));
+			$curl = new \Curl\Curl;			
+			$response = serialize($curl->get($url));
 
-			$response = curl_exec($ch);
-
-			if (curl_error($ch))
+			if ($curl->error)
 				throw new CHttpException(500, Yii::t('Api.index', 'Failed to retrieve remote resource.'));
 
-			curl_close($ch);
+			$curl->close();
 
-			Yii::app()->cache->set('API::Proxy::'.$url, $response, 600);
+			Yii::app()->cache->set('API::Proxy::'.$hash, $response, 600);
 		}
-
-		return CJSON::decode($response);
+		
+		return unserialize($response);
 	}
 }

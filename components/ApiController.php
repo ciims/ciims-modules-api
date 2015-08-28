@@ -166,6 +166,24 @@ class ApiController extends CiiController
 		return true;
 	}
 
+
+	/**
+	 * Default Error Handler. Yii automatically magics the response when renderOutput is called. This just updates the necessary components for us
+	 */
+	public function actionError()
+	{
+		$response = array();
+		$this->message = Yii::t('Api.Controller', 'An unexpected error occured.');
+		if ($error=Yii::app()->errorHandler->error)
+		{
+			$this->status = $error['code'];
+			if (YII_DEBUG)
+				$response = $error;
+		}
+
+		return $this->renderOutput($error);
+	}
+
 	/**
 	 * This is the same as CController::runAction($action), except it returns data rather than echoing it.
 	 * @param  CAction $action
@@ -230,18 +248,6 @@ class ApiController extends CiiController
                'response' => $response
            	));
 		Yii::app()->end();
-	}
-
-	/**
-	 * Default Error Handler. Yii automatically magics the response when renderOutput is called. This just updates the necessary components for us
-	 */
-	public function actionError()
-	{
-		if ($error=Yii::app()->errorHandler->error)
-		{
-			$this->status = $error['code'];
-			$this->message = $error['message'];
-		}
 	}
 
 	/**

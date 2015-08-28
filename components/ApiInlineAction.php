@@ -39,7 +39,7 @@ class ApiInlineAction extends CInlineAction
             else
                 return false;
         }
-
+        
         return $method->invokeArgs($object,$ps);
     }
 
