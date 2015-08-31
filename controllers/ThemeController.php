@@ -182,7 +182,10 @@ class ThemeController extends ApiController
 			mkdir($themesPath);
 
 		// Download the ZIP package to the runtime/themes temporary directory
-		$this->downloadPackage($details['sha'], $details['file'], Yii::getPathOfAlias('application.runtime.themes'));
+		
+		if (!$this->downloadPackage($details['sha'], $details['file'], Yii::getPathOfAlias('application.runtime.themes')))
+			throw new CHttpException(500, Yii::t('Api.theme', 'Failed to download theme package from Github. Source might be down'));
+
 		$zip = new ZipArchive;
 
 		// If we can open the file
@@ -228,7 +231,7 @@ class ThemeController extends ApiController
 		}
 
 		unlink($tmpPath.'.zip');
-		throw new CHttpException(500, 'Unable to extract downloaded ZIP package');
+		throw new CHttpException(500, Yii::t('Api.theme', 'Unable to extract downloaded ZIP package'));
 	}
 
 	/**
@@ -268,22 +271,22 @@ class ThemeController extends ApiController
 		if (defined('CII_CONFIG'))
 			return false;
 
-		$response = false;//Yii::app()->cache->get('CiiMS::API::Themes::Available');
+		$response = Yii::app()->cache->get('CiiMS::API::Themes::Available');
 		if ($response === false)
 		{
 			$url = 'https://themes.ciims.io/index.json';
 			$curl = new \Curl\Curl;
-			$response = serialize($curl->get($url));
+			$response = $curl->get($url);
 
 			if ($curl->error)
 				throw new CHttpException(500, Yii::t('Api.index', 'Failed to retrieve remote resource.'));
 
 			$curl->close();
 
-			Yii::app()->cache->set('CiiMS::API::Themes::Available', serialize($response), 900);
+			Yii::app()->cache->set('CiiMS::API::Themes::Available', $response, 900);
 		}
 
-		return unserialize($response);
+		return $response;
 	}
 
 	/**
@@ -296,34 +299,31 @@ class ThemeController extends ApiController
 		if ($name == false)
 			throw new CHttpException(400, Yii::t('Api.Theme', 'Missing theme name'));
 
-		$result = Yii::app()->cache->get('CiiMS::Packagist::Themes/'.$name);
-		
-		if ($result === false)
-		{
-			$array = array();
-			$packagist = new Packagist\Api\Client();
+		// Fetch the data from Packagist
+		$data = Yii::app()->cache->get('CiiMS::API::Themes::' . $name);
 
+		if ($data === false)
+		{
+			$url = 'https://packagist.org/packages/ciims-themes/' . $name . '.json';
+			$curl = new \Curl\Curl;
 			try {
-				$theme = $packagist->get('ciims-themes/'.$name);
+				$response = $curl->get($url)->package;
 			} catch (Exception $e) {
-				throw new CHttpException($e->getResponse()->getStatusCode(), $e->getResponse()->getReasonPhrase());
+				throw new CHttpException(500, Yii::t('Api.index', 'Failed to retrieve data from Packagist.'));
 			}
 
-			// List maintainers
+			if ($curl->error)
+				throw new CHttpException(500, Yii::t('Api.index', 'Failed to retrieve data from Packagist.'));
+
+			$curl->close();
+
 			$maintainers 	= array();
 			$versions 		= array();
 			$latestVersion 	= 0;
-			foreach ($theme->getMaintainers() as $maintainer)
-			{
-				$maintainers[] 	= array(
-                	'name' 		=> $maintainer->getName(),
-                    'email' 	=> $maintainer->getEmail(),
-                    'homepage' 	=> $maintainer->getHomepage()
-                );
-			}
+			$latestVersionLiteral;
 
-			$info = $theme->getVersions();
-			foreach ($info as $version=>$details)
+			// Retrieve the version history
+			foreach ($response->versions as $version => $details)
 			{
 				// Ignore dev-master
 				if ($version == 'dev-master')
@@ -334,28 +334,37 @@ class ThemeController extends ApiController
 
 				$versions[$versionId] = $version;
 				if ($versionId > $latestVersion)
+				{
 					$latestVersion = $versionId;
+					$latestVersionLiteral = $version;
+				}
 			}
 
-			$result = array(
-				'name' 				=> $theme->getName(),
-				'description' 		=> $theme->getDescription(),
-				'repository' 		=> $theme->getRepository(),
+			// Retreive the maintainers for the latest version
+			foreach($response->versions->{$latestVersionLiteral}->authors as $maintainer)
+			{
+				$maintainers[] = array(
+					'name' 		=> $maintainer->name,
+					'email' 	=> $maintainer->email,
+					'homepage' 	=> $maintainer->homepage 
+				);
+			}
+
+			$data = array(
+				'name' 				=> $response->name,
+				'description' 		=> $response->description,
+				'repository' 		=> $response->repository,
 				'maintainers' 		=> $maintainers,
 				'latest-version' 	=> $versions[$latestVersion],
-				'sha' 				=> $info[$versions[$latestVersion]]->getSource()->getReference(),
-				'file' 				=> $theme->getRepository().'/archive/'.$versions[$latestVersion].'.zip',
-				'downloads' 		=> array(
-					'total' 	=> $theme->getDownloads()->getTotal(),
-					'monthly' 	=> $theme->getDownloads()->getMonthly(),
-					'daily' 	=> $theme->getDownloads()->getDaily()
-				)
+				'sha' 				=> $response->versions->{$latestVersionLiteral}->source->reference,
+				'file' 				=> $response->repository . '/archive/' . $versions[$latestVersion] . '.zip',
+				'downloads' 		=> (array)$response->downloads
 	        );
 
-			Yii::app()->cache->set('CiiMS::Packagist::Themes/'.$name, $result, 900);
+			Yii::app()->cache->set('CiiMS::API::Themes::' . $name, $data, 900);
 		}
 
-		return $result;
+		return $data;		
 	}
 
 	/**
@@ -424,19 +433,9 @@ class ThemeController extends ApiController
 		ignore_user_abort(true);
 		set_time_limit(0);
 
-		$fp = fopen($path . DS . $id . '.zip', 'w+');
-		$curl = curl_init();
-		curl_setopt_array($curl, array(
-          	CURLOPT_FILE => $fp,
-          	CURLOPT_FOLLOWLOCATION => true,
-          	CURLOPT_URL => $file,
-          	CURLOPT_BINARYTRANSFER => true
-      	));
-
-		curl_exec($curl);
-		curl_close($curl);
-		fclose($fp);
-
-		return;
+		
+		$curl = new \Curl\Curl;
+		$curl->setOpt(CURLOPT_FOLLOWLOCATION, true);
+		return $curl->download($file, $path . DS . $id . '.zip');
 	}
 }
