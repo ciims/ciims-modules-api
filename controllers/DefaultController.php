@@ -44,7 +44,7 @@ class DefaultController extends ApiController
 			throw new CHttpException(400, Yii::t('Api.index', 'Missing $_POST[url] parameter'));
 
 		$hash = md5($url);
-		$response = Yii::app()->cache->get('API::Proxy::'.$hash);
+		$response = Yii::app()->cache->get('CiiMS::API::Proxy::'.$hash);
 
 		if ($response == false)
 		{

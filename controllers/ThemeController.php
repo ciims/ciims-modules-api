@@ -268,30 +268,22 @@ class ThemeController extends ApiController
 		if (defined('CII_CONFIG'))
 			return false;
 
-		$url = 'https://themes.ciims.io/index.json';
-
-		$result = Yii::app()->cache->get('CiiMS::Themes::Available');
-		if ($result === false)
+		$response = false;//Yii::app()->cache->get('CiiMS::API::Themes::Available');
+		if ($response === false)
 		{
-			$ch = curl_init();
-			curl_setopt_array($ch, array(
-              	CURLOPT_RETURNTRANSFER => true,
-              	CURLOPT_FOLLOWLOCATION => true,
-              	CURLOPT_URL            => $url,
-          	));
+			$url = 'https://themes.ciims.io/index.json';
+			$curl = new \Curl\Curl;
+			$response = serialize($curl->get($url));
 
-			$data = curl_exec($ch);
+			if ($curl->error)
+				throw new CHttpException(500, Yii::t('Api.index', 'Failed to retrieve remote resource.'));
 
-			if (curl_error($ch))
-				throw new CHttpException(500, Yii::t('Api.theme', 'Unable to download list of approved themes'));
+			$curl->close();
 
-			curl_close($ch);
-
-			$result = CJSON::decode($data);
-			Yii::app()->cache->set('CiiMS::Themes::Available', $result, 900);
+			Yii::app()->cache->set('CiiMS::API::Themes::Available', serialize($response), 900);
 		}
 
-		return $result;
+		return unserialize($response);
 	}
 
 	/**
@@ -354,10 +346,10 @@ class ThemeController extends ApiController
 				'sha' 				=> $info[$versions[$latestVersion]]->getSource()->getReference(),
 				'file' 				=> $theme->getRepository().'/archive/'.$versions[$latestVersion].'.zip',
 				'downloads' 		=> array(
-							'total' 	=> $theme->getDownloads()->getTotal(),
-							'monthly' 	=> $theme->getDownloads()->getMonthly(),
-							'daily' 	=> $theme->getDownloads()->getDaily()
-						)
+					'total' 	=> $theme->getDownloads()->getTotal(),
+					'monthly' 	=> $theme->getDownloads()->getMonthly(),
+					'daily' 	=> $theme->getDownloads()->getDaily()
+				)
 	        );
 
 			Yii::app()->cache->set('CiiMS::Packagist::Themes/'.$name, $result, 900);
