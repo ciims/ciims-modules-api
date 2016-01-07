@@ -177,11 +177,13 @@ class ApiController extends CiiController
 		if ($error=Yii::app()->errorHandler->error)
 		{
 			$this->status = $error['code'];
+			$this->message = $error['message'];
 			if (YII_DEBUG)
 				$response = $error;
+		
 		}
 
-		return $this->renderOutput($error);
+		return $this->renderOutput($response);
 	}
 
 	/**
